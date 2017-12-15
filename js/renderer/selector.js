@@ -6,11 +6,12 @@ function Selector(graph, elem)
 	this.elem = elem;
 	this.parent = this.g.svg.select(".selectors");
 	this.cSize = 3;
-	
+
 	this.svg = this.parent.append("svg:g")
 		.attr("class","selector")
-		.attr("entity",this.elem.id);
-		
+		.attr("entity",this.elem.id)
+		.attr("graph",this.g.id);
+
 	this.eventHandler = new selectorEvent(this.g, this);
 }
 
@@ -43,7 +44,7 @@ Selector.prototype.update = function()
 		}
 	}
 	else if (this.elem.type == 1){
-		if (this.elem.connectCount() != 2 || this.elem.arrow == this.elem.id){ 
+		if (this.elem.connectCount() != 2 || this.elem.arrow == this.elem.id){
 			this.updateGrip(this.elem.getPosition(), "center");
 		}
 		this.elem.svg.selectAll("path").each(function(){

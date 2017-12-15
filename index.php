@@ -3,11 +3,11 @@
 	<head>
 		<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
 		<title>Visualist | HTML Test</title>
-		
+
 		<script type="text/javascript" src="js/api/timeline_js/timeline-api.js?bundle=true"></script>
-		
+
         <script type="text/javascript" src="js/api/d3.V3.min.js"></script>
-        
+
 		<!-- <script type="text/javascript" src="js/api/d3.min.js"></script>
 		<script type="text/javascript" src="js/api/d3.chart.min.js"></script>
 		<script type="text/javascript" src="js/api/d3.csv.min.js"></script>
@@ -17,7 +17,7 @@
 		<script type="text/javascript" src="js/api/d3.time.min.js"></script>
 		<script type="text/javascript" src="js/api/d3.behavior.min.js"></script> -->
 		<script type="text/javascript" src="js/event/d3.graphBehavior.js"></script>
-		
+
 		<script type="text/javascript" src="js/api/jquery/jquery-1.10.2.min.js"></script>
 		<script type="text/javascript" src="js/api/jquery/jquery-ui-1.10.3.custom.min.js"></script>
 		<script type="text/javascript" src="js/api/jquery/jquery.layout-latest.min.js"></script>
@@ -25,42 +25,40 @@
 		<!-- <script type="text/javascript" src="js/api/jquery/jquery.alerts.js"></script> -->
 		<script type="text/javascript" src="js/api/jquery/jquery-custom-file-input.js"></script>
 		<script type="text/javascript" src="js/api/tiny_mce/jquery.tinymce.min.js"></script>
-        
+
 		<script type="text/javascript" src="js/common.js"></script>
 		<script type="text/javascript" src="js/utils.js"></script>
 		<script type="text/javascript" src="js/actions.js"></script>
 		<script type="text/javascript" src="js/controller.js"></script>
-		
+
 		<script type="text/javascript" src="js/event/event.js"></script>
-		<script type="text/javascript" src="js/event/graphEvent.js"></script>
 		<script type="text/javascript" src="js/event/nodeEvent.js"></script>
 		<script type="text/javascript" src="js/event/linkEvent.js"></script>
 		<script type="text/javascript" src="js/event/boxEvent.js"></script>
 		<script type="text/javascript" src="js/event/selectorEvent.js"></script>
-		
+
 		<script type="text/javascript" src="js/entity.js"></script>
 		<script type="text/javascript" src="js/graph.js"></script>
-		
+
 		<script type="text/javascript" src="js/ui/interface.js"></script>
 		<script type="text/javascript" src="js/ui/controls.js"></script>
-		
+
 		<script type="text/javascript" src="js/renderer/label.js"></script>
 		<script type="text/javascript" src="js/renderer/node.js"></script>
 		<script type="text/javascript" src="js/renderer/link.js"></script>
-		<script type="text/javascript" src="js/renderer/mlink.js"></script>
 		<script type="text/javascript" src="js/renderer/box.js"></script>
 		<script type="text/javascript" src="js/renderer/polygon.js"></script>
 		<script type="text/javascript" src="js/renderer/selector.js"></script>
-		
+
 		<link type="text/css" rel="stylesheet" href="css/smoothness/visualist.css" /> <!--black-tie-->
 		<link type="text/css" rel="stylesheet" href="css/app.css" />
 		<link type="text/css" rel="stylesheet" href="css/jquery.alerts.css" media="screen" />
-		
+
 		<?php
-			
+
 			function ScanDirectory($Directory){
 				$myArray = array();
-				
+
 				$MyDirectory = opendir($Directory);
 				while($Entry = @readdir($MyDirectory)) {
 					if ($Entry == '.svn' || $Entry == '.' || $Entry == '..' || is_dir($Directory.'/'.$Entry) || substr($Entry, 0, 1) == '.'){
@@ -72,7 +70,7 @@
 				closedir($MyDirectory);
 				return $myArray;
 			}
-			
+
 			$icons = array();
 			$Dir = opendir('img');
 			while($Folder = @readdir($Dir)) {
@@ -98,7 +96,7 @@
             $( '<li><a href=#graph_'+g.id+'>NewGraph::'+g.id+'</a></li>' ).appendTo( '.center-tabs .ui-tabs-nav' );
             $( '.center-tabs' ).tabs( 'refresh' );
             $( '<div id=graph_'+g.id+'></div>' ).appendTo( '.center-tabs' );
-            
+
 			$('#graph_'+g.id).data('data', g);
 			g.init();
 			// var actions = new Array();

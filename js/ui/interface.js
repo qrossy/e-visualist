@@ -9,11 +9,11 @@
 
 Interface.instance = null;
 
-Interface.get = function() {  
-	if (this.instance == null) {  
-		this.instance = new Interface();  
-	}  
-	return this.instance;  
+Interface.get = function() {
+	if (this.instance == null) {
+		this.instance = new Interface();
+	}
+	return this.instance;
 }
 
 Interface.icons = null;
@@ -34,13 +34,13 @@ Interface.resizeTimerID;
 Interface.padding = false;
 
 Interface.timeBarParams = {
-		width:          "70%", 
+		width:          "70%",
 		intervalUnit:   Timeline.DateTime.DAY,
 		intervalPixels: 100,
 		fixInterval: 	100,
 		timeZone:       0,
 	};
-	
+
 Interface.timeBarTheme = Timeline.ClassicTheme.create();
 Interface.timeBarTheme.autoWidth = false;
 Interface.timeBarTheme.firstDayOfWeek = 1;
@@ -57,7 +57,7 @@ Interface.timeBarTheme.event.instant.iconHeight = 4;
 Interface.timeBarBandInfos = [
 	Timeline.createHotZoneBandInfo({
 		zones: 			[],
-		width:          Interface.timeBarParams.width, 
+		width:          Interface.timeBarParams.width,
 		intervalUnit:   Interface.timeBarParams.intervalUnit,
 		intervalPixels: Interface.timeBarParams.intervalPixels,
 		timeZone:       Interface.timeBarParams.timeZone,
@@ -66,8 +66,8 @@ Interface.timeBarBandInfos = [
 	})
 	,
 	Timeline.createBandInfo({
-		width:          "30%", 
-		intervalUnit:   Timeline.DateTime.MONTH, 
+		width:          "30%",
+		intervalUnit:   Timeline.DateTime.MONTH,
 		overview:       true,
 		eventSource: 	null,
 		theme:			Interface.timeBarTheme,
@@ -92,11 +92,11 @@ Interface.timeBarBandInfos = [
 
 	})
 	];
-	
+
 function Interface()
 {
-	if ( Interface.caller != Interface.get ) {  
-		throw new Error("Interface is a Singleton, call it with Interface.get()");  
+	if ( Interface.caller != Interface.get ) {
+		throw new Error("Interface is a Singleton, call it with Interface.get()");
 	}
 }
 
@@ -120,9 +120,9 @@ Interface.prototype.setKeyEvents = function()
 			if (Interface.SelectedCorner){
 				var info = Interface.SelectedCorner.attr('class').split('_');
 				g.ctrl.addAction(Action.removeCorner, {
-					g: g, 
-					e: g.get(Interface.SelectedCorner.parent().attr('entity')), 
-					index: parseInt(info[2]), 
+					g: g,
+					e: g.get(Interface.SelectedCorner.parent().attr('entity')),
+					index: parseInt(info[2]),
 					id: info[0]});
 				g.ctrl.run();
 				Interface.SelectedCorner = false;
@@ -140,7 +140,7 @@ Interface.prototype.setKeyEvents = function()
 			}
 		}
 	});
-	
+
 	$(window).keyup(function(event) {
 		event.preventDefault();
 		event.stopPropagation();
@@ -179,17 +179,16 @@ Interface.prototype.init = function()
                         mainTabs.tabs( "refresh" );
 					}
 				});
-				mainTabs.tabs('select', '#' + ui.panel.id);
 			},
-			select: function(event, ui) {
-				Interface.get().currentGraph = $($(ui.tab).attr('href')).data('data');
-				Interface.get().updateHistory(true, Interface.get().currentGraph);
+			activate: function(event, ui) {
+				Interface.get().currentGraph = ui.newPanel.data('data');
+				Interface.get().updateHistory(true);
 				Interface.UpdateTimebar();
 			},
 		})
 		.find( '.ui-tabs-nav').sortable({
 			axis: 'x',
-			start: function(event, ui) { 
+			start: function(event, ui) {
 				//log(ui.helper.find('.ui-icon-close'));
 				//ui.helper.find('.ui-icon-close').remove();
 			},
@@ -198,18 +197,18 @@ Interface.prototype.init = function()
 	$('.center-tabs').append(Interface.timebarDiv);
 	Interface.timeBarBandInfos[1].syncWith = 0;
 	Interface.timeBarBandInfos[1].highlight = true;
-	Interface.timebar = Timeline.create(document.getElementById("visualist_timebar"), Interface.timeBarBandInfos); 
-	
+	Interface.timebar = Timeline.create(document.getElementById("visualist_timebar"), Interface.timeBarBandInfos);
+
 	this.popupDiv = $('<div class="visualist_popup" id="visualist_popup"></div>');
 	$('body').append(this.popupDiv);
-	
+
 	//Setup Toolbar
 	var toolbar = $('.ui-layout-north');
 	//New Graph
 	toolbar.append($('<a class="toolbar_tool ui-widget" title="New Graph"><span class="ui-icon ui-icon-document inline_icon"></span>&nbsp;&nbsp;&nbsp;</a>')
-		.button().click(function(e) { 
-			e.preventDefault(); 
-			$(this).blur(); 
+		.button().click(function(e) {
+			e.preventDefault();
+			$(this).blur();
 			var g = new Graph();
             $( '<li><a href=#graph_'+g.id+'>NewGraph::'+g.id+'</a></li>' ).appendTo( '.center-tabs .ui-tabs-nav' );
             $( '.center-tabs' ).tabs( 'refresh' );
@@ -219,10 +218,11 @@ Interface.prototype.init = function()
 			g.init();
 			g.svg.attr('width', $('.ui-layout-center').width());
 			g.svg.attr('height', $('.ui-layout-center').height());
+			// Interface.get().updateHistory(true, g);
 		}));
 	//Open Graph
-	toolbar.append($('<div style="float:left;"><form id="visualistOpen" name="viualistOpen" enctype="multipart/form-data" method="post" action="load.php" target="upload_target" ></div>')); 
-	toolbar.append($('<iframe id="upload_target" name="upload_target" src="#" style="width:0;height:0;border:0px solid #fff;"></iframe> '));//style="visibility:hidden"	
+	toolbar.append($('<div style="float:left;"><form id="visualistOpen" name="viualistOpen" enctype="multipart/form-data" method="post" action="load.php" target="upload_target" ></div>'));
+	toolbar.append($('<iframe id="upload_target" name="upload_target" src="#" style="width:0;height:0;border:0px solid #fff;"></iframe> '));//style="visibility:hidden"
 	toolbar.append($('<a class="visualistLoad toolbar_tool ui-widget" title="Open Graph"><span class="ui-icon ui-icon-folder-open inline_icon"></span>&nbsp;&nbsp;&nbsp;</a>').button().file());
 	$('.visualistLoad').choose(function(e, input) {
 		input.attr("name", "File");
@@ -234,10 +234,10 @@ Interface.prototype.init = function()
 	//Save Graph
 	var form = $('<form id="visualistForm" name="viualistForm" method="post" action="save.php" style="float:right;">')
 		.append('<input type="text" id="saveString" name="Content" style="visibility:hidden"/>')
-		.append('<input type="text" id="graphName" name="Graph" style="visibility:hidden"/>');	
+		.append('<input type="text" id="graphName" name="Graph" style="visibility:hidden"/>');
 	toolbar.append(form);
 	toolbar.append($('<a class="toolbar_tool ui-widget" title="Save Graph" href="javascript:void(0);"><span class="ui-icon ui-icon-disk inline_icon"></span>&nbsp;&nbsp;&nbsp;</a>')
-		.button().click(function(e) { 
+		.button().click(function(e) {
 			e.preventDefault();
 			$(this).blur();
 			var g = Interface.get().currentGraph;
@@ -246,11 +246,11 @@ Interface.prototype.init = function()
 			$('#visualistForm').submit();
 		}));
 	//toolbar.append($('<span class="ui-icon-grip-dotted-vertical inline_icon">&nbsp;&nbsp;</span>'));
-	
+
 	//Layout
 	toolbar.append($('<span class="toolbar_tool ui-widget"><a title="ForceLayout">forceLayout</a></span>')
-		.button().click(function(e) { 
-			e.preventDefault(); 
+		.button().click(function(e) {
+			e.preventDefault();
 			var g = Interface.get().currentGraph;
 			g.hideHelpers();
 			var size = Interface.get().canvasSize();
@@ -262,7 +262,7 @@ Interface.prototype.init = function()
 				.distance(20)
 				.charge(-10000)
 				.gravity(.5);
-				
+
 			force.on("tick", function(d) {
 				if (d.alpha < 0.06){
 					force.stop();
@@ -280,7 +280,7 @@ Interface.prototype.init = function()
 	$("#visualist_timebar").hide();
 	$("#showTimebar").attr('checked', false);
 	$("#showTimebar").button();
-	
+
 	//Handle SVG Zooming: with viewBox, currentScale has no effect
 	// var zoom = function(type){
 		// var g = Interface.get().currentGraph;
@@ -315,47 +315,47 @@ Interface.prototype.init = function()
 	// var zoomReset = $('<a class="toolbar_tool" href="#zoomFit"><span class="ui-icon ui-icon-home inline_icon"></span></a>');
 	// zoomReset.button().bind('click', function(){zoom('reset');});
 	// var zoomOut = $('<a class="toolbar_tool" href="#zoomOut"><span class="ui-icon ui-icon-zoomout inline_icon"></span></a>');
-	// zoomOut.button().bind('click', function(){zoom('out');});	
+	// zoomOut.button().bind('click', function(){zoom('out');});
 	// zoomDiv.append(zoomIn).append(zoomReset).append(zoomOut);
 	// $('.ui-tabs-nav').append(zoomDiv);
-	
+
 	// LEFT PANEL
 	//IconSelector Panel
 	this.createIconSelector();
-	
+
 	// RIGHT PANEL
 	var acc = $('<div id="west-accordion"></div>');
 	// History Panel
 	var histDiv = $('<div>');
 	var $historyHeader = $('<h3 id="west-history-header"><a href="#">History</a></h3>');
 	histDiv.append($historyHeader);
-	var $history = $('<div><table class="visualist-history" style="display:block;"></table></div>');
-	
+	var $history = $('<div style=" min-height: 200px;"><table class="visualist-history" style="display:block;"></table></div>');
+
 	var undo = $('<a class="toolbar_tool" href="#undo"><span class="ui-icon ui-icon-arrowreturnthick-1-w inline_icon"></span>&nbsp;&nbsp;</a>')
-		.button().click(function(e) { 
-			e.preventDefault(); 
-			$(this).blur(); 
+		.button().click(function(e) {
+			e.preventDefault();
+			$(this).blur();
 			var g = Interface.get().currentGraph;
 			g.undo();
 			Interface.get().updateHistory();
 		});
-	
+
 	var redo = $('<a class="toolbar_tool" href="#redo"><span class="ui-icon ui-icon-arrowreturnthick-1-e inline_icon"></span>&nbsp;&nbsp;</a>')
-		.button().click(function(e) { 
-			e.preventDefault(); 
-			$(this).blur(); 
+		.button().click(function(e) {
+			e.preventDefault();
+			$(this).blur();
 			var g = Interface.get().currentGraph;
 			g.redo();
 			Interface.get().updateHistory();
 		});
-		
+
 	$history.prepend(redo).prepend(undo);
 	histDiv.append($history);
 	acc.append(histDiv);
-	
+
 	// Properties Panel
 	acc.append('<div><h3><a href="#">Properties</a></h3><div class="visualist-properties"></div></div>');
-	
+
 	var stopAcc = false;
 	acc.find('h3').click(function( event ) {
 		if ( stopAcc ) {
@@ -388,7 +388,7 @@ Interface.prototype.init = function()
 /**
 * Load GraphFile
 *
-*@param {JSON} 
+*@param {JSON}
 */
 Interface.prototype.load = function(data)
 {
@@ -411,13 +411,13 @@ Interface.prototype.load = function(data)
 */
 Interface.prototype.updateProperties = function(event)
 {
-	
+
 	var div = $('.visualist-properties');
 	if(!div.is(":visible")){
 		return;
 	}
 	var g = this.currentGraph;
-	
+
 	div.html('');
 	var entity = event.e;
 	if (!entity){
@@ -434,7 +434,7 @@ Interface.prototype.updateProperties = function(event)
 		});
 		if (g.gridVisible) $("#gridVisible").attr('checked', true);
 		$("#gridVisible").button();
-		
+
 		div.append('<input type="checkbox" id="snapToGrid" /><label for="snapToGrid">Snap to Grid</label>');
 		$("#snapToGrid").click(function(e) {
 			g.snapToGrid ? g.snapToGrid = false : g.snapToGrid = true;
@@ -465,7 +465,7 @@ Interface.prototype.updateProperties = function(event)
 			entity.create();
 			entity.redraw();
 		});
-		
+
 		var eSet = $('<div class="visualist_node_set" style="margin-bottom:5px;">')
 		eSet.append('<input type="checkbox" id="visualist_node_set" name="radio"/><label for="visualist_node_set">Set</label>');
 		div.append(eSet);
@@ -480,7 +480,7 @@ Interface.prototype.updateProperties = function(event)
 			entity.redraw();
 			entity.updateConnect();
 		});
-	
+
 		var eTheme = $('<div class="visualist_node_theme" style="margin-bottom:5px;">')
 		eTheme.append('<input type="checkbox" id="visualist_node_theme" name="radio"/><label for="visualist_node_theme">ThemeLine</label>');
 		div.append(eTheme);
@@ -503,11 +503,11 @@ Interface.prototype.updateProperties = function(event)
 *@param {Boolean} force Redraw even if the history is hidden (used on accordion click)
 *@param {String} tab The id of the Graph (used on tab click)
 */
-Interface.prototype.updateHistory = function(force, g)
+Interface.prototype.updateHistory = function(force)
 {
-	g ? true : g = this.currentGraph;
+	g = Interface.get().currentGraph;
 	if (!g) return;
-	
+
 	if(!$('.visualist-history').is(":visible") && !force){
 		return;
 	}
@@ -515,10 +515,10 @@ Interface.prototype.updateHistory = function(force, g)
 	var hist = g.history();
 	if (hist[1] == 0){$('a[href="#undo"]').button('option','disabled',true);}
 	else{$('a[href="#undo"]').button('option','disabled',false);}
-	
+
 	if (hist[1] == hist[0].length-1){$('a[href="#redo"]').button('option','disabled',true);}
 	else{$('a[href="#redo"]').button('option','disabled',false);}
-	
+
 	$('.visualist-history').html('');
 	for (var id in hist[0]){
 		var $step = $('<tr id='+id+'><td>'+hist[0][id].name+'</td></tr>');
@@ -603,8 +603,8 @@ Interface.prototype.createIconSelector = function()
 			$('#'+i).append($icon);
 			$icon.draggable({
 				//	use a helper-clone that is appended to 'body' so is not limited by the pane area
-				helper:	function () { 
-					return $(this).clone().appendTo('body').css('zIndex',5).show(); 
+				helper:	function () {
+					return $(this).clone().appendTo('body').css('zIndex',5).show();
 				},
 				cursor:	'move',
 				stop: function(event, ui) {
@@ -643,13 +643,13 @@ Interface.prototype.createIconSelector = function()
 			});
 		}
 	});
-	
+
 	gDiv.append('<div ui-widget" style="margin-top: 10px !important;"><input type="checkbox" id="addText" /><label for="addText">Text</label></div>');
 	$("#addText").click(function() {
 		//
 	});
 	$("#addText").button();
-	
+
 	var rType = $('<div class="ui-widget visualist_linkSelector_type" style="margin-top: 10px !important;">');
 	rType.append('<input type="radio" id="visualist_linkSelector_type1" name="radio" value="link" /><label for="visualist_linkSelector_type1">Link</label>');
 	rType.append('<input type="radio" id="visualist_linkSelector_type2" name="radio" value="polygon"/><label for="visualist_linkSelector_type2">Polygon</label>');
@@ -661,7 +661,7 @@ Interface.prototype.createIconSelector = function()
 	});
 	gDiv.append(rType);
 	rType.buttonsetv();
-	
+
 	gDiv.append('<div ui-widget" style="margin-top: 10px !important;"><input type="checkbox" id="addCorner" /><label for="addCorner">Corner</label></div>');
 	$("#addCorner").click(function() {
 		Interface.addingCorner = true;
@@ -701,7 +701,7 @@ Interface.UpdateTimebar = function(zones)
 	var newband = Timeline.createHotZoneBandInfo({
 		zones:			zones,
 		theme:			Interface.timeBarTheme,
-		width:          Interface.timeBarParams.width, 
+		width:          Interface.timeBarParams.width,
 		intervalUnit:   Interface.timeBarParams.intervalUnit,
 		intervalPixels: Interface.timeBarParams.intervalPixels,
 		timeZone:       Interface.timeBarParams.timeZone,
@@ -709,7 +709,7 @@ Interface.UpdateTimebar = function(zones)
 	});
 	Interface.timeBarBandInfos[0] = newband;
 	Interface.timeBarBandInfos[1].eventSource = source;
-	
+
 	Interface.timebarStart = Interface.timebar.getBand(0)._ether._start;
 	Interface.timebarDiv.attr('class', 'visualist_timebar');
 	Interface.timebar = Timeline.create(document.getElementById("visualist_timebar"), Interface.timeBarBandInfos);
@@ -725,14 +725,14 @@ Interface.UpdateTimebar = function(zones)
 	});
 }
 
-Timeline.OriginalEventPainter.prototype._showBubble = function(x, y, evt) 
+Timeline.OriginalEventPainter.prototype._showBubble = function(x, y, evt)
 {
 	var band = Interface.timebar.getBand(0);
 	var events = band._eventPainter._eventIdToElmt;
 	var img = $(events[evt._id]).find('img');
 	var g = Interface.get().currentGraph;
 	var entity = g.get(evt._id);
-	
+
 	if (evt._icon == "js/api/timeline_js/images/gray-circle.png"){
 		var icon = "js/api/timeline_js/images/dull-blue-circle.png";
 		entity.ctrlDateTime = 1;
@@ -746,7 +746,7 @@ Timeline.OriginalEventPainter.prototype._showBubble = function(x, y, evt)
 		entity.ctrlDateTime = 2;
 		var x = band._ether.dateToPixelOffset(entity.startDateTime);
 		if (entity.w) x -= entity.w/2;
-		
+
 		entity.x = (x - g.translateX())/g.scale();
 		entity.redraw();
 		g.hideSelector();

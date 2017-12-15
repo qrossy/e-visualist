@@ -1,4 +1,4 @@
-nodeEvent.prototype.toString = function() 
+nodeEvent.prototype.toString = function()
 {
 	return "NodeEvent";
 }
@@ -11,20 +11,20 @@ function nodeEvent(graph, node)
 
 nodeEvent.prototype.down = function(event)
 {
-	
+	this.g = Interface.get().currentGraph;
 	this.prevPos = {
-		x:event.pageX, 
+		x:event.pageX,
 		y:event.pageY
 	};
-	
+
 	this.visibleArea = this.g.visibleArea();
 	this.visibleNodes = this.g.getNodes(this.visibleArea);
-	
+
 	this.hasStopped = false;
-	
+
 	var zones = null;
 	this.g.zonesByEntity ? zones = this.g.zonesByEntity[this.e.id] : false;
-	
+
 	if (Interface.addingLink){
 		Interface.addingLink.from = this.e;
 		this.g.svg.select(".links").append("svg:line")
@@ -44,10 +44,16 @@ nodeEvent.prototype.down = function(event)
 		var self = this;
 		var inSelected = false;
 		$('.selector[visibility="visible"]').each(function(){
-			var id = $(this).attr('entity');
-			self.movingEntities[id] = self.g.get(id).getPosition();
-			if (id == self.e.id){
-				inSelected = true;
+			if ($(this).attr('graph') != self.g.id){
+				return;
+			}
+			else{
+				var id = $(this).attr('entity');
+				log($(this));
+				self.movingEntities[id] = self.g.get(id).getPosition();
+				if (id == self.e.id){
+					inSelected = true;
+				}
 			}
 		});
 		if (!inSelected){
@@ -55,7 +61,7 @@ nodeEvent.prototype.down = function(event)
 			this.movingEntities[this.e.id] = this.e.getPosition();
 		}
 	}
-	
+
 	this.g.hideHelpers();
 }
 
@@ -65,12 +71,12 @@ nodeEvent.prototype.move = function(event)
 		return;
 	}
 	this.g.hideAlignmentHelper();
-	
+
 	this.newPos = {
-		x:event.pageX, 
+		x:event.pageX,
 		y:event.pageY
 	};
-	
+
 	if (Interface.addingLink){
 		var pos = this.g.pos(event.pageX, event.pageY);
 		this.g.svg.select(".tempLink")
@@ -78,7 +84,7 @@ nodeEvent.prototype.move = function(event)
 			.attr("y2", pos[1]);
 	}
 	else{
-		
+
 		// if (!Interface.padding){
 			// this.e.selector.clear();
 		// }
@@ -87,14 +93,14 @@ nodeEvent.prototype.move = function(event)
 		for (var id in this.movingEntities){
 			var p = this.movingEntities[id];
 			var e = this.g.get(id);
-			var pos = {x: (p.x + dx), y: (p.y + dy)}; 
+			var pos = {x: (p.x + dx), y: (p.y + dy)};
 			if (this.g.snapToGrid){
 				pos = this.g.snap(pos);
-			}	
-			
+			}
+
 			var hAlign = false;
 			var vAlign = false;
-			
+
 			for (var n in this.visibleNodes){
 				if (hAlign && vAlign){
 					break;
@@ -123,58 +129,58 @@ nodeEvent.prototype.move = function(event)
 					}
 				}
 			}
-			
+
 			e.x = pos.x;
 			e.y = pos.y;
 			e.redraw();
 			e.updateConnect();
 		}
-		
+
 		//Update TimeBar
 		if (this.e.ctrlDateTime == 0 || !this.e.startDateTime || $("#visualist_timebar").is(':hidden')){
 			return;
 		}
 		//Interface.padding = true;
 		var zones = this.g.zonesByEntity[this.e.id];
-		
+
 		//If this is the first controlled Event, everything move
 		if (Interface.timebar.getBand(0).getEtherPainter()._zones[0].endTime == this.e.startDateTime.getTime()){
 			Interface.timebar.getBand(0)._moveEther(this.newPos.x-this.prevPos.x);
 		}
-		
+
 		if (zones.start && this.e.ctrlDateTime == 1){
 			var startMagnify = zones.start.magnify - (this.newPos.x - this.prevPos.x)/(zones.start.delta/(3600*10*24));
 			if (startMagnify < 0.01 && startMagnify < zones.start.magnify){
 				this.hasStopped = true;
 			}
 		}
-		
+
 		if (zones.end){
 			var endMagnify = zones.end.magnify + (this.newPos.x - this.prevPos.x)/(zones.end.delta/(3600*10*24));
 			if (endMagnify < 0.01 && endMagnify < zones.end.magnify){
 				this.hasStopped = true;
 			}
 		}
-		
+
 		if (this.hasStopped){
 			this.newPos = this.prevPos;
 			return;
 		}
-		
+
 		if (zones.start && this.e.ctrlDateTime == 1){
 			zones.start.magnify = startMagnify;
 			zones.start.unit = Interface.timeBarParams.intervalUnit - parseInt(zones.start.magnify/2);
 		}
-		
+
 		if (zones.end){
 			zones.end.magnify = endMagnify;
 			zones.end.unit = Interface.timeBarParams.intervalUnit - parseInt(zones.end.magnify/2);
 		}
-		
+
 		Interface.UpdateTimebar(this.g.timeZones);
-		
+
 		// Update Other Entities
-		
+
 		if (this.e.ctrlDateTime == 2){
 			for (var id in this.g.all){
 				var e = this.g.all[id];
@@ -185,7 +191,7 @@ nodeEvent.prototype.move = function(event)
 				}
 			}
 		}
-		
+
 		this.prevPos = this.newPos;
 	}
 }
@@ -217,7 +223,7 @@ nodeEvent.prototype.up = function(event)
 	this.g.ctrl.addBatch(actions, 'Move');
 	this.g.ctrl.run();
 	}
-	
+
 	delete this.prevPos;
 	delete this.newPos;
 	$(".visualist_linkSelector_type").find('input').each(function(){
@@ -229,7 +235,7 @@ nodeEvent.prototype.up = function(event)
 }
 
 nodeEvent.prototype.over = function(event)
-{	
+{
 	if (Interface.dragging){
 		return;
 	}
@@ -252,7 +258,7 @@ nodeEvent.prototype.out = function(event)
 
 
 nodeEvent.prototype.creationPopup = function(event)
-{		
+{
 	var div = Interface.get().popupDiv;
 	$(div)
 		.css("left", event.pageX-115)
@@ -265,7 +271,7 @@ nodeEvent.prototype.creationPopup = function(event)
 		.append("svg:svg")
 		.attr("width", 250)
 		.attr("height", 40);
-	
+
 	var self = this;
 	//Icon
 	svg.append("svg:image")
@@ -372,8 +378,8 @@ nodeEvent.prototype.creationPopup = function(event)
 	for (var i in Interface.colors){
 		var color = Interface.colors[i];
 		var c = $('<a href="#" title="'+color+'" style="background-color:'+color+'">&nbsp;&nbsp;&nbsp;</a>')
-			.click(function(e) { 
-				e.preventDefault(); 
+			.click(function(e) {
+				e.preventDefault();
 				if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.e.getData();
 				self.e.color = this.title;
 				self.e.redraw();
@@ -387,7 +393,7 @@ nodeEvent.prototype.creationPopup = function(event)
 		rColor.append(c);
 	}
 	div.append($('<div id="FirstColorPicker" style="text-align:center;">').append(rColor));
-	
+
 	var wDiv = $('<div style="margin-left:5px;margin-top:5px;">');
 	wDiv.append('<input type="text" id="width" size="1" style="float:right;margin-top:-3px;"/>');
 	wDiv.append('<div id="slider-width" style="width:185px;margin-left:3px;"></div>');
@@ -410,8 +416,8 @@ nodeEvent.prototype.creationPopup = function(event)
 			self.e.updateConnect();
 		}
 	});
-	
+
 	$( "#width" ).val( $( "#slider-width" ).slider( "value" ));
-	
+
 	$(div).show();
 }
