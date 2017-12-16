@@ -212,7 +212,7 @@ Interface.prototype.init = function()
 			var g = new Graph();
             $( '<li><a href=#graph_'+g.id+'>NewGraph::'+g.id+'</a></li>' ).appendTo( '.center-tabs .ui-tabs-nav' );
             $( '.center-tabs' ).tabs( 'refresh' );
-            $( '<div id=graph_'+g.id+'></div>' ).appendTo( '.center-tabs' );
+            $( '<div id=graph_'+g.id+' style="padding: 0em 0em;"></div>' ).appendTo( '.center-tabs' );
 			$('#graph_'+g.id).data('data', g);
 			Interface.get().currentGraph = g;
 			g.init();

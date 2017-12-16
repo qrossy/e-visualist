@@ -13,7 +13,7 @@ graphEvent.zoom = function(graph) {
 	  initPos = [0, 0],
 	  prevPos,
 	  newPos,
-	  verbose = true,
+	  verbose = false,
 	  nodes = false,
 	  hideLabels = false;
 
@@ -22,9 +22,7 @@ graphEvent.zoom = function(graph) {
         .on("mousedown", mousedown)
         .on("mousewheel", mousewheel)
         .on("DOMMouseScroll", mousewheel)
-        .on("dblclick", mousewheel);
-
-    d3.select(window)
+        .on("dblclick", mousewheel)
         .on("mousemove", mousemove)
         .on("mouseup", mouseup);
   }
