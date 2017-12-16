@@ -51,7 +51,8 @@ graphEvent.zoom = function(graph) {
   		Interface.modifiedLabel = null;
   	}
   	var div = Interface.get().popupDiv;
-  	$(div).fadeOut();
+  	$(div).fadeOut()
+
   	//Added to catch the offset of a TimeBar translate
   	x = g.main.node().transform.baseVal.getItem(0).matrix.e;
 
@@ -132,7 +133,6 @@ graphEvent.zoom = function(graph) {
       mousemove();
       pan = null;
     }
-
 	Interface.padding = false;
 	document.body.style.cursor = 'default';
 	g.svg.select(".graph-selector").attr('visibility', 'hidden');
@@ -148,7 +148,13 @@ graphEvent.zoom = function(graph) {
 		$(this).attr('checked', false);
 		$(this).button('refresh');
 	});
-	Interface.addingLink = false;
+  var elemClass = $(d3.event.target).parent('g').attr('class');
+  log($(d3.event.target));
+  if (elemClass != 'nodeEntity'){
+	   Interface.addingLink = false;
+     g.svg.select(".tempLink").remove();
+ 		 document.body.style.cursor = 'default';
+     }
   }
 
   // mousewheel events are totally broken!

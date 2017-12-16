@@ -202,6 +202,7 @@ nodeEvent.prototype.up = function(event)
 	}
 	else if (Interface.addingLink){
 		var other = this.getObjectAt(event, true);
+
 		if (other && other.e && other.e.type == 0 && other.e != Interface.addingLink.from){
 			Interface.createRelation(event, [Interface.addingLink.from, other.e]);
 		}

@@ -1,4 +1,4 @@
-Label.prototype.toString = function() 
+Label.prototype.toString = function()
 {
 	var ret = "Label";
 	return ret;
@@ -17,7 +17,7 @@ function Label(params)
 	this.textWidth = params.textWidth ? params.textWidth : 35;
 	this.fixedWidth = params.fixedWidth ? params.fixedWidth : false;
 	delete params;
-	
+
 	this.getData = function()
 	{
 		return {
@@ -32,21 +32,21 @@ function Label(params)
 			fixedWidth: this.fixedWidth, 			// Boolean
 			};
 	}
-	
+
 	this.setData = function(data)
 	{
 		for (var id in data){
 			this[id] = data[id];
 		}
 	}
-	
+
 	this.updateConnect = function()
 	{
 	}
 }
 
 Label.prototype.redraw = function()
-{ 
+{
 	this.h = $(this.svg.select('div').node())[0].clientHeight;
 	if (this.e.type == 0){
 		this.setPos();
@@ -61,7 +61,7 @@ Label.prototype.redraw = function()
 		this.x = this.e.x - this.textWidth/2;
 		this.y = this.e.y - this.h/2;
 	}
-	
+
 	this.svg
 		.attr("x", this.x)
 		.attr("y", this.y)
@@ -72,14 +72,16 @@ Label.prototype.redraw = function()
 Label.prototype.create = function()
 {
 	this.svg = this.e.svg.append("svg:foreignObject");
+	this.svg
+			.attr("class", "label");
 	if (this.e.type == 1 && !this.linkPath){
 		this.linkPath = this.e.svg.select( this.e.connectCount() == 2 ? '.e'+this.e.source.id : 'path').node();
 	}
-	
+
 	$(this.svg.node()).append('<div><p style="text-align: center; margin: 0px;"><span style="text-align: center;"'+
 		(this.e.type == 1 ? 'style="background-color:#ffffff;"' : '')+
 		'>'+this.text+'</span></p></div>');
-	
+
 	var self = this;
 	var onDblClick = function()
 	{
@@ -110,8 +112,11 @@ Label.prototype.create = function()
 			if(self.e.type == 1){d3.event.path = self.linkPath;}
 			self.e.eventHandler.creationPopup(d3.event);
 		}
+		Interface.addingLink = false;
+		self.e.g.svg.select(".tempLink").remove();
+		document.body.style.cursor = 'default';
 	}
-	
+
 	this.svg.on('dblclick', onDblClick);
 	this.svg.on('mousedown', onMouseDown);
 	this.svg.on('mousemove', onMouseMove);
@@ -119,7 +124,7 @@ Label.prototype.create = function()
 	this.svg.on('contextmenu', function() {
 		d3.event.preventDefault();
 	});
-	
+
 	this.redraw();
 }
 
@@ -151,7 +156,7 @@ Label.prototype.textPopup = function(event)
         .css("position", "relative")
         .css("width", 600)
 		.html("");
-	
+
 	$(div).append('<div id="visualist_popup_pos" style="position:absolute;left:-100px;border:1px solid #CCCCCC;border-right-width: 0px;">');
 	var self = this;
 	var svg = d3.select("#visualist_popup_pos")
@@ -229,7 +234,7 @@ Label.prototype.textPopup = function(event)
 			}
 		});
 	$( "#width" ).val( $( "#slider-vertical" ).slider( "value" ));
-	
+
 	svg.append("svg:text")
 		.attr("x", 10)
 		.attr("y", 170)
@@ -252,10 +257,10 @@ Label.prototype.textPopup = function(event)
 			self.e.updateConnect();
 			Interface.modifiedLabel = self;
 		});
-				
+
 	var txt = $(this.svg.select('div').node()).html();
 	div.append('<textarea class="tinymce" name="content">'+txt+'</textarea>');
-	
+
     var onChangeContent = function()
 	{
 		var txt = tinyMCE.activeEditor.getContent();
@@ -281,7 +286,7 @@ Label.prototype.textPopup = function(event)
 		self.e.updateConnect();
 		Interface.modifiedLabel = self;
 	}
-	
+
 	$('textarea.tinymce').tinymce({
 		// Location of TinyMCE script
 		script_url : 'js/api/tiny_mce/tinymce.min.js',
@@ -320,7 +325,7 @@ Label.prototype.textPopup = function(event)
 			ed.on('change', onChangeContent);
 		}
 	});
-	
+
 	$(div).show();
 }
 
