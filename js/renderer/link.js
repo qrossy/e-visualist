@@ -1,4 +1,4 @@
-Link.prototype.toString = function() 
+Link.prototype.toString = function()
 {
 	var ret = "Link";
 	return ret;
@@ -21,11 +21,11 @@ function Link(params)
 	this.mainPath = params.mainPath ? params.mainPath : null;
 	this.parent = Entity;
 	this.parent(params);
-	
+
 	if (this.startDateTime){
 		this.ctrlDateTime = 2;
 	}
-	
+
 	this.getData = function()
 	{
 		var data = this.getMainData();
@@ -52,9 +52,9 @@ Link.prototype.create = function()
 	this.svg
 		.attr("class", "link")
 		.attr("id", this.id);
-		
+
 	this.eventHandler = new linkEvent(this.g, this);
-	
+
 	if (this.connectCount() == 2){
 		var clink = this.g.relations[this.hash()][0];
 		if (clink.source != this.source){
@@ -66,7 +66,7 @@ Link.prototype.create = function()
 		}
 		this.setMainPath(this.mainPath);
 	}
-	
+
 	for (var i in this.connect){
 		var p = this.svg.append("svg:path")
 			.attr("class", "e"+i)
@@ -80,7 +80,7 @@ Link.prototype.create = function()
 			.attr("pointer-events", "all")
 			.attr("visibility", "hidden");
 	}
-	
+
 	// //Reorder Element !
 	// parent = document.getElementById('links');
 	// if (parent.childNodes.length > 0){
@@ -101,7 +101,7 @@ Link.prototype.drawTheme = function()
 			// totY += this.connect[id].getCenter().y;
 		// }
 		// this.y = totY/this.connectCount();
-	
+
 		// for (var i in this.connect){
 			// p += 1;
 			// var id  = ".e"+i;
@@ -109,7 +109,7 @@ Link.prototype.drawTheme = function()
 				// .attr("stroke-width", this.width)
 				// .attr("stroke-dasharray", this.dasharray)
 				// .attr("stroke", this.color);
-				
+
 			// var y = this.connect[i].y + this.connect[i].h/2.0;
 			// var d = "M"+pos.x+","+pos.y+" L"+pos.x+","+pos.y+
 				// " L"+this.x+","+this.y+" L"+this.x+","+this.y;
@@ -124,7 +124,7 @@ Link.prototype.drawSLink = function()
 	path.attr("stroke-width", this.width)
 		.attr("stroke-dasharray", this.dasharray)
 		.attr("stroke", this.color);
-	
+
 	this.svg.select('.e'+this.target.id).attr("visibility", "hidden");
 	if (this.space == 0){
 		var segments = this.getMainPath().node().pathSegList;
@@ -178,7 +178,7 @@ Link.prototype.drawBLink = function()
 			var d = 'M'+p.x+','+p.y+' ';
 		}
 		else{
-			d += 'L'+p.x+','+p.y+' '; 
+			d += 'L'+p.x+','+p.y+' ';
 		}
 		sSeg.removeItem(s);
 	}
@@ -199,7 +199,7 @@ Link.prototype.drawMLink = function()
 			.attr("stroke-width", this.width)
 			.attr("stroke-dasharray", this.dasharray)
 			.attr("stroke", this.color);
-		
+
 		var path = this.svg.select(id).node();
 		this.setLinkCenter();
 		if (this.space == 0){
@@ -216,7 +216,7 @@ Link.prototype.drawMLink = function()
 					Link.applyCoord(start, segments.getItem(1));
 				}
 			}
-			else {		
+			else {
 				if (!this.x || !this.y) {this.setLinkCenter();}
 				var pos = Link.getIntersection(this.connect[i],this);
 				var d = "M"+pos.x+","+pos.y+" L"+pos.x+","+pos.y+
@@ -226,7 +226,7 @@ Link.prototype.drawMLink = function()
 			}
 		}
 		else{
-			this.svg.select(id).attr("d", this.g.relations[this.hash()][0].svg.select(id).attr('d'));	
+			this.svg.select(id).attr("d", this.g.relations[this.hash()][0].svg.select(id).attr('d'));
 		}
 		this.updateSpacers(path, id);
 		this.svg.select(".click_e"+i).attr("d", this.svg.select(id).attr("d"));
@@ -234,7 +234,7 @@ Link.prototype.drawMLink = function()
 }
 
 Link.prototype.redraw = function()
-{	
+{
 	//Draw Link
 	if (this.isThemeLink()){
 		this.drawTheme();
@@ -245,10 +245,10 @@ Link.prototype.redraw = function()
 	else{
 		this.drawMLink();
 	}
-	
+
 	//Draw Labels
 	this.redrawLabels();
-	
+
 	//Draw Arrows
 	this.svg.selectAll(".arrow").remove();
 	if (this.arrow != null){
@@ -260,27 +260,27 @@ Link.prototype.updateSpacers = function(path, id)
 {
 	var space = parseInt((this.space+1)/2);
 	space = this.space%2 == 0 ? space*this.distToLink : (-space*this.distToLink);
-	
+
 	var segments = path.pathSegList;
 	var init = segments.getItem(0);
 	var end = segments.getItem(segments.numberOfItems-1);
 	if (init.x == end.x && init.y == end.y)return;
-	
+
 	var c1 = segments.getItem(1);
 	var c2 = segments.getItem(segments.numberOfItems-2);
 	var next = segments.getItem(2);
 	var last = segments.getItem(segments.numberOfItems-3);
 	var v1 = Link.vector(init, next);
 	var v2 = Link.vector(end, last);
-	
+
 	c2.x = end.x + this.distToNode*v2.ux() + (space*v2.uy());
 	c2.y = end.y + this.distToNode*v2.uy() + (-space*v2.ux());
 	c1.x = init.x + this.distToNode*v1.ux() + (-space*v1.uy());
 	c1.y = init.y + this.distToNode*v1.uy() + (space*v1.ux());
-	
+
 	if (this.space != 0){
-		var segments = this.connectCount() == 2 ? 
-			this.getRootMainPath().node().pathSegList : 
+		var segments = this.connectCount() == 2 ?
+			this.getRootMainPath().node().pathSegList :
 			this.g.relations[this.hash()][0].svg.select(id).node().pathSegList;
 		if (segments.numberOfItems > 4){
 			for (var i = 2; i < segments.numberOfItems - 2; i++){
@@ -378,7 +378,7 @@ Link.prototype.addArrow = function(entityId)
 	else{
 		var path = this.svg.select(".e"+entityId).node();
 	}
-	
+
 	var segments = path.pathSegList;
 	if (this.connectCount() == 2 && this.arrow == this.id){
 		var point = segments.getItem(segments.numberOfItems-1);
@@ -392,7 +392,7 @@ Link.prototype.addArrow = function(entityId)
 		var point = segments.getItem(1);
 		var v = Link.vector(segments.getItem(1), segments.getItem(2));
 	}
-	
+
 	var d = " M"+(point.x + dist*v.ux() + (space*v.uy()))+","+(point.y + dist*v.uy() - (space*v.ux()));
 	d += " L"+(point.x + (this.width/4*v.uy()))+","+(point.y + (-this.width/4*v.ux()));
 	d += " L"+(point.x - (this.width/4*v.uy()))+","+(point.y + (this.width/4*v.ux()));
@@ -404,7 +404,7 @@ Link.prototype.addArrow = function(entityId)
 		.attr("stroke-linecap", "round")
 		.attr("stroke-width", this.width > 4 ? this.width/2 : this.width)
 		.attr("stroke", (this.connectCount() == 2 && this.arrow == this.id && entityId == this.target.id) ? this.secondColor : this.color)
-		.attr("d",d);	
+		.attr("d",d);
 }
 
 
@@ -487,7 +487,7 @@ Link.getIntersection = function(entity, point)
 			}
 		}
 	}
-	
+
 	if (!nodeIntersect.x || !nodeIntersect.y){
 		nodeIntersect = entity.getCenter();
 	}
@@ -535,7 +535,7 @@ Link.boxIntersect = function (bbox, line){
 Link.intersect = function(S1, S2, I0, I1 )
 {
 	var SMALL_NUM = 0.00000001; // anything that avoids division overflow
-	
+
     var u = Link.vector(S1[0], S1[1]);
     var v = Link.vector(S2[0], S2[1]);
     var w = Link.vector(S2[0], S1[0]);
@@ -579,10 +579,10 @@ Link.intersect = function(S1, S2, I0, I1 )
 			t0 = w.y / v.y;
 			t1 = w2.y / v.y;
         }
-		
+
         if (t0 > t1) {                  // must have t0 smaller than t1
-			var t=t0; 
-			t0=t1; 
+			var t=t0;
+			t0=t1;
 			t1=t;    // swap if not
         }
         if (t0 > 1 || t1 < 0) {

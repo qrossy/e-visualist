@@ -49,7 +49,6 @@ nodeEvent.prototype.down = function(event)
 			}
 			else{
 				var id = $(this).attr('entity');
-				log($(this));
 				self.movingEntities[id] = self.g.get(id).getPosition();
 				if (id == self.e.id){
 					inSelected = true;

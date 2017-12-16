@@ -1,7 +1,7 @@
-(function(){d3.behavior = {};
+(function(){graphEvent = {};
 // TODO unbind zoom behavior?
 // TODO unbind listener?
-d3.behavior.zoom = function(graph) {
+graphEvent.zoom = function(graph) {
 
   var x = 0,
       y = 0,
@@ -13,7 +13,7 @@ d3.behavior.zoom = function(graph) {
 	  initPos = [0, 0],
 	  prevPos,
 	  newPos,
-	  verbose = false,
+	  verbose = true,
 	  nodes = false,
 	  hideLabels = false;
 
@@ -30,65 +30,65 @@ d3.behavior.zoom = function(graph) {
   }
 
   function mousedown(d, i) {
-	if (verbose) log('Graph Down');
-	nodes = false
-	initPos = [d3.event.pageX, d3.event.pageY];
-	prevPos = initPos;
-	if (Interface.modifiedEntity){
-		var entity = g.get(Interface.modifiedEntity.id);
-		var data = entity.getData();
-		entity.setData(Interface.modifiedEntity);
-		entity.redraw();
-		entity.redrawLabels();
-		g.ctrl.addAction(Action.change, {e:entity, data:data});
-		g.ctrl.run();
-		Interface.modifiedEntity = null;
-		//Interface.get().setKeyEvents();
-	}
-	if (Interface.modifiedLabel){
-		var html = Interface.modifiedLabel.getHtml();
-		Interface.modifiedLabel.setHtml(Interface.modifiedLabel.oldLabel);
-		g.ctrl.addAction(Action.changeLabel, {l:Interface.modifiedLabel, txt:html});
-		g.ctrl.run();
-		Interface.modifiedLabel = null;
-	}
-	var div = Interface.get().popupDiv;
-	$(div).fadeOut();
-	//Added to catch the offset of a TimeBar translate
-	x = g.main.node().transform.baseVal.getItem(0).matrix.e;
-	
-	if (d3.event.which == 3 && d3.event.target.tagName == 'svg'){
-		Interface.padding = true;
-		document.body.style.cursor = '-moz-grab';
-		pan = {
-		  x0: x - d3.event.clientX,
-		  y0: y - d3.event.clientY,
-		  target: this,
-		  data: d,
-		  index: i
-		};
-	}
-	else if (d3.event.target.tagName == 'svg'){
-		g.hideHelpers();
-		d3.event.e == null;
-		Interface.get().updateProperties(d3.event);
-		var pos = g.pos(initPos[0], initPos[1]);
-		g.svg.select(".graph-selector")
-			.attr("x", pos[0])
-			.attr("y", pos[1])
-			.attr("width", 0)
-			.attr("height", 0)
-			.attr('visibility', 'visible');
-	}
-    d3.event.preventDefault();
-    //window.focus(); // TODO focusableParent
+  	if (verbose) log('Graph Down '+g.id);
+  	nodes = false
+  	initPos = [d3.event.pageX, d3.event.pageY];
+  	prevPos = initPos;
+  	if (Interface.modifiedEntity){
+  		var entity = g.get(Interface.modifiedEntity.id);
+  		var data = entity.getData();
+  		entity.setData(Interface.modifiedEntity);
+  		entity.redraw();
+  		entity.redrawLabels();
+  		g.ctrl.addAction(Action.change, {e:entity, data:data});
+  		g.ctrl.run();
+  		Interface.modifiedEntity = null;
+  		//Interface.get().setKeyEvents();
+  	}
+  	if (Interface.modifiedLabel){
+  		var html = Interface.modifiedLabel.getHtml();
+  		Interface.modifiedLabel.setHtml(Interface.modifiedLabel.oldLabel);
+  		g.ctrl.addAction(Action.changeLabel, {l:Interface.modifiedLabel, txt:html});
+  		g.ctrl.run();
+  		Interface.modifiedLabel = null;
+  	}
+  	var div = Interface.get().popupDiv;
+  	$(div).fadeOut();
+  	//Added to catch the offset of a TimeBar translate
+  	x = g.main.node().transform.baseVal.getItem(0).matrix.e;
+
+  	if (d3.event.which == 3 && d3.event.target.tagName == 'svg'){
+  		Interface.padding = true;
+  		document.body.style.cursor = '-moz-grab';
+  		pan = {
+  		  x0: x - d3.event.clientX,
+  		  y0: y - d3.event.clientY,
+  		  target: this,
+  		  data: d,
+  		  index: i
+  		};
+  	}
+  	else if (d3.event.target.tagName == 'svg'){
+  		g.hideHelpers();
+  		d3.event.e == null;
+  		Interface.get().updateProperties(d3.event);
+  		var pos = g.pos(initPos[0], initPos[1]);
+  		g.svg.select(".graph-selector")
+  			.attr("x", pos[0])
+  			.attr("y", pos[1])
+  			.attr("width", 0)
+  			.attr("height", 0)
+  			.attr('visibility', 'visible');
+  	}
+      d3.event.preventDefault();
+      //window.focus(); // TODO focusableParent
   }
 
   function mousemove() {
 	// if (d3.event.target.tagName == 'svg'){
 		// document.body.style.cursor = 'default';
 	// }
-	if (verbose){ log('Graph Move');}
+	if (verbose){ log('Graph Move '+g.id);}
     zoom = null;
 	newPos = [d3.event.pageX, d3.event.pageY];
 	if (pan){
@@ -101,6 +101,7 @@ d3.behavior.zoom = function(graph) {
 		dispatch.call(pan.target, pan.data, pan.index);
 	}
 	else if (g.svg.select(".graph-selector").attr('visibility') == 'visible'){
+
 		var selector = g.svg.select(".graph-selector");
 		var w = newPos[0]-initPos[0];
 		var h = newPos[1]-initPos[1];
@@ -128,17 +129,17 @@ d3.behavior.zoom = function(graph) {
   }
 
   function mouseup() {
-	if (verbose) log('Graph Up');
+	if (verbose) log('Graph Up '+g.id);
     if (pan) {
       mousemove();
       pan = null;
     }
-	
+
 	Interface.padding = false;
 	document.body.style.cursor = 'default';
 	g.svg.select(".graph-selector").attr('visibility', 'hidden');
 	$('.visualist_linkSelector a').css('border-color','#ffffff');
-	
+
 	if (newPos){
 		prevPos = false;
 		if (Interface.addingLink && nodes.length > 1){
@@ -167,6 +168,7 @@ d3.behavior.zoom = function(graph) {
     .node().parentNode;
 
   function mousewheel(d, i) {
+    if (verbose) log('Graph Wheel '+g.id);
     var e = d3.event;
     // initialize the mouse location for zooming (to avoid drift)
     if (!zoom) {

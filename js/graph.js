@@ -16,7 +16,7 @@ function Graph(params)
 	Graph.nextId ++;
 	if (!params) params = new Object();
 	params.id ? this.id = params.id : this.id = Graph.nextId;
-	
+
 	this.all = new Object();
 	this.nodes = new Object();
 	this.relations = new Object();
@@ -26,7 +26,7 @@ function Graph(params)
 	this.snapToGrid = true;
 	this.gridSize = 15;
 	this.gridVisible = false;
-	
+
 	this.timeBarEventSource = new Timeline.DefaultEventSource();
 }
 
@@ -71,7 +71,7 @@ Graph.prototype.init = function()
 		.attr("fill", '#000000')
 		.attr("fill-opacity", 0.20)
 		.attr("rx", 5)
-		.attr("ry", 5);	
+		.attr("ry", 5);
 	//ThemeLines layer
 	this.main.append("svg:g")
 		.attr("class", "themeLines");
@@ -95,7 +95,7 @@ Graph.prototype.init = function()
 		.attr("stroke", "#ff0000")
 		.attr("stroke-width", 1)
 		.attr("stroke-opacity", 0.5)
-		.attr("stroke-dasharray", "3,3");			
+		.attr("stroke-dasharray", "3,3");
 	//Nodes layer
 	this.main.append("svg:g")
 		.attr("class", "nodes");
@@ -112,26 +112,26 @@ Graph.prototype.init = function()
 		.attr("stroke-dasharray", "3,3")
 		.attr("rx", 5)
 		.attr("ry", 5)
-		.attr("stroke", '#000000');	
-	
+		.attr("stroke", '#000000');
+
 	var self = this;
-		
+
 	var onZoom = function() {
 		self.main.node().transform.baseVal.getItem(0).matrix.e = d3.event.translate[0];
 		self.main.node().transform.baseVal.getItem(0).matrix.f = d3.event.translate[1];
 		if (d3.event.pan){
 			return;
 		}
-		
+
 		self.main.node().transform.baseVal.getItem(0).matrix.a = d3.event.scale;
 		self.main.node().transform.baseVal.getItem(0).matrix.d = d3.event.scale;
 		self.svg.select("#gridPattern").attr("width", self.gridSize*d3.event.scale);
 		self.svg.select("#gridPattern").attr("height", self.gridSize*d3.event.scale);
-		
+
 		if ($("#visualist_timebar").length == 0 || $("#visualist_timebar").is(':hidden')){
 			return;
 		}
-		
+
 		Interface.padding = true; //Prevent TimeBar to update Graph during ScrollEvent
 		var staticDate = Interface.timebar.getBand(0)._ether.pixelOffsetToDate(d3.event.x);
 		Interface.timeBarParams.intervalPixels = Interface.timeBarParams.fixInterval*d3.event.scale;
@@ -140,8 +140,8 @@ Graph.prototype.init = function()
 		Interface.timebar.getBand(0)._moveEther(d3.event.x - newStaticDatePos);
 		Interface.padding = false;
 	}
-	
-	this.svg.call(d3.behavior.zoom(this)
+	// this.svg.eventHandler = new graphEvent(this);
+	this.svg.call(graphEvent.zoom(this)
 		.on("zoom", onZoom));
 	this.svg.on('contextmenu', function() {
 		d3.event.preventDefault();
@@ -220,13 +220,13 @@ Graph.prototype.getData = function()
 	}
 	return data;
 }
-	
+
 Graph.prototype.setData = function(data)
 {
-	
+
 	for (var id in data){
 		var e = data[id];
-		
+
 		if (e.type == 0){
 			var node = new Node({id:e.id});
 			node.setData(e, this);
@@ -238,7 +238,7 @@ Graph.prototype.setData = function(data)
 			node.redrawLabels();
 		}
 	}
-	
+
 	for (var id in data){
 		var e = data[id];
 		if (e.type == 0){
@@ -249,7 +249,7 @@ Graph.prototype.setData = function(data)
 		}
 		else if (e.type == 2){
 			var entity = new Box({id:e.id});
-			
+
 		}
 		else if (e.type == 3){
 			var entity = new Polygon({id:e.id});
@@ -263,9 +263,9 @@ Graph.prototype.setData = function(data)
 			entity.connect[e.connect[i]] = this.get(eid);
 			this.get(eid).connect[entity.id] = entity;
 		}
-		
+
 		if (entity.type == 1){
-			if (!this.relations[entity.hash()]){ 
+			if (!this.relations[entity.hash()]){
 				this.relations[entity.hash()] = {};
 			}
 			this.relations[entity.hash()][entity.space] = entity;
@@ -311,13 +311,13 @@ Graph.prototype.getDateZones = function()
 		}
 	}
 	dates.sort();
-	
+
 	this.timeZones = [];
 	this.zonesByEntity = {};
 	for (var i = 0; i < dates.length-1; i++){
 		var e1 = map[dates[i]].entity;
 		var e2 = map[dates[i+1]].entity;
-		var zone = {   
+		var zone = {
 			start: 		map[dates[i]].date.toGMTString(),
 			end:		map[dates[i+1]].date.toGMTString(),
 			magnify:  	1,
@@ -416,7 +416,7 @@ Graph.prototype.hideHelpers = function()
 
 }
 
-Graph.prototype.pos = function(x, y) 
+Graph.prototype.pos = function(x, y)
 {
 	//Get Size of the Canvas
 	var size = Interface.get().canvasSize();
@@ -431,9 +431,9 @@ Graph.prototype.pos = function(x, y)
 	return this.screenToCanvas(graphPos);
 }
 
-Graph.prototype.screenToCanvas = function(pos) 
+Graph.prototype.screenToCanvas = function(pos)
 {
-	return pos.x ? 
+	return pos.x ?
 		{x:(pos.x - this.translateX())/this.scale(),
 		y:(pos.y - this.translateY())/this.scale()}
 		:
@@ -441,9 +441,9 @@ Graph.prototype.screenToCanvas = function(pos)
 		(pos[1] - this.translateY())/this.scale()];
 }
 
-Graph.prototype.snap = function(pos) 
+Graph.prototype.snap = function(pos)
 {
-	return pos.x ? 
+	return pos.x ?
 		{x:this.gridSize * Math.round(pos.x / this.gridSize),
 		y:this.gridSize * Math.round(pos.y / this.gridSize)}
 		:

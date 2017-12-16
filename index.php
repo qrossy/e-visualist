@@ -16,7 +16,6 @@
 		<script type="text/javascript" src="js/api/d3.layout.min.js"></script>
 		<script type="text/javascript" src="js/api/d3.time.min.js"></script>
 		<script type="text/javascript" src="js/api/d3.behavior.min.js"></script> -->
-		<script type="text/javascript" src="js/event/d3.graphBehavior.js"></script>
 
 		<script type="text/javascript" src="js/api/jquery/jquery-1.10.2.min.js"></script>
 		<script type="text/javascript" src="js/api/jquery/jquery-ui-1.10.3.custom.min.js"></script>
@@ -32,6 +31,7 @@
 		<script type="text/javascript" src="js/controller.js"></script>
 
 		<script type="text/javascript" src="js/event/event.js"></script>
+		<script type="text/javascript" src="js/event/graphEvent.js"></script>
 		<script type="text/javascript" src="js/event/nodeEvent.js"></script>
 		<script type="text/javascript" src="js/event/linkEvent.js"></script>
 		<script type="text/javascript" src="js/event/boxEvent.js"></script>

@@ -1,22 +1,22 @@
 /**
 * Events
-* 
+*
 * @constructor
 */
 function visEvent(graph, elem)
 {
-	
+
 	this.g = graph;
 	this.e = elem;
 	this.verbose = false;
-	
-	
+
+
 	this.getObjectAt = function(event, onlyOther)
 	{
 		var target = $(event.target);
 		var parentGroup = target.parent('g');
 		if (parentGroup.length === 1)
-		{	
+		{
 			if (onlyOther && parentGroup.attr('id') === this.e.id){
 				return null;
 			}
@@ -25,23 +25,23 @@ function visEvent(graph, elem)
 		}
 		else
 			return null;
-	}	
-	
+	}
+
 	var self = this;
-	
+
 	var toggleDrag = function(on) {
 		if (on) {
 			$(document).bind('mousemove',onMouseMove);
 			$(document).bind('mouseup', onMouseUp);
-			
+
 		} else {
 			$(document).unbind('mousemove', onMouseMove);
 			$(document).unbind('mouseup', onMouseUp);
 		}
 		Interface.dragging = on;
 	}
-	
-	var onMouseMove = function(event) 
+
+	var onMouseMove = function(event)
 	{
 		if (self.verbose) log(self.toString()+' Move');
 		if (!Interface.dragging) {
@@ -50,38 +50,38 @@ function visEvent(graph, elem)
 		}
 		self.move(event);
 	}
-	
-	var onMouseUp = function(event) 
+
+	var onMouseUp = function(event)
 	{
 		if (self.verbose) log(self.toString()+' Up');
 		toggleDrag(false);
 		self.up(event);
 
 	}
-		
-	var onMouseDown = function(event) 
+
+	var onMouseDown = function(event)
 	{
 		if (self.verbose) log(self.toString()+' Down');
 		if (!event){
 			event = d3.event;
 		}
 		event.preventDefault();
-		
+
 		var div = Interface.get().popupDiv;
 		$(div).hide();
-		
+
 		if (Interface.dragging)
 			toggleDrag(false);
-		
+
 		self.initPos = self.g.pos(event.pageX, event.pageY);
 		//self.g.hideHelpers();
-		
+
 		self.down(event);
-		
+
 		toggleDrag(true);
 	}
 
-	var onMouseOver = function(event) 
+	var onMouseOver = function(event)
 	{
 		if (self.verbose) log(self.toString()+' Over');
 		if (!event){
@@ -91,8 +91,8 @@ function visEvent(graph, elem)
 		self.over(event);
 	}
 
-	var onMouseOut = function(event) 
-	{	
+	var onMouseOut = function(event)
+	{
 		if (self.verbose) log(self.toString()+' Out');
 		if (!event){
 			event = d3.event;
@@ -125,4 +125,3 @@ function visEvent(graph, elem)
 // visEvent.prototype.out = function(event)
 // {
 // }
-
