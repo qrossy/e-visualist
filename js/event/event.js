@@ -24,7 +24,7 @@ function visEvent(graph, elem)
 			return {g:parentGroup,e:other};
 		}
 		else
-			return null;
+		return null;
 	}
 
 	var self = this;
@@ -71,7 +71,7 @@ function visEvent(graph, elem)
 		$(div).hide();
 
 		if (Interface.dragging)
-			toggleDrag(false);
+		toggleDrag(false);
 
 		self.initPos = self.g.pos(event.pageX, event.pageY);
 		//self.g.hideHelpers();
@@ -102,12 +102,12 @@ function visEvent(graph, elem)
 	}
 
 	this.e.svg
-		.on('mouseover', onMouseOver)
-		.on('mouseout', onMouseOut)
-		.on('mousedown', onMouseDown)
-		.on('contextmenu', function() {
-			d3.event.preventDefault();
-		});
+	.on('mouseover', onMouseOver)
+	.on('mouseout', onMouseOut)
+	.on('mousedown', onMouseDown)
+	.on('contextmenu', function() {
+		d3.event.preventDefault();
+	});
 }
 // Child methods
 // visEvent.prototype.down = function(event)

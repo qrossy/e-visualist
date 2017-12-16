@@ -34,85 +34,85 @@ Graph.prototype.init = function()
 {
 	var self = this;
 	this.svg = d3.select("#graph_"+this.id)
-		.append("svg:svg")
-		.attr("class", "svg-droppable");
+	.append("svg:svg")
+	.attr("class", "svg-droppable");
 	//Defs
 	this.svg.append("svg:defs")
-		.append("svg:pattern")
-			.attr("id", "gridPattern")
-			.attr("x", "0")
-			.attr("y", "0")
-			.attr("width", this.gridSize)
-			.attr("height", this.gridSize)
-			.attr("patternUnits", "userSpaceOnUse")
-		.append("svg:rect")
-			.attr("x","0")
-			.attr("y","0")
-			.attr("width","1")
-			.attr("height","1")
-			.attr("fill", "grey");
+	.append("svg:pattern")
+	.attr("id", "gridPattern")
+	.attr("x", "0")
+	.attr("y", "0")
+	.attr("width", this.gridSize)
+	.attr("height", this.gridSize)
+	.attr("patternUnits", "userSpaceOnUse")
+	.append("svg:rect")
+	.attr("x","0")
+	.attr("y","0")
+	.attr("width","1")
+	.attr("height","1")
+	.attr("fill", "grey");
 	//Grid
 	this.svg.append("svg:rect")
-		.attr("class", "grid")
-		.attr("fill", "url(#gridPattern)")
-		.attr("x", "0")
-		.attr("y", "0")
-		.attr("width", "0")
-		.attr("height", "0")
-		.attr("visibility", "hidden");
+	.attr("class", "grid")
+	.attr("fill", "url(#gridPattern)")
+	.attr("x", "0")
+	.attr("y", "0")
+	.attr("width", "0")
+	.attr("height", "0")
+	.attr("visibility", "hidden");
 	//Pannable and Zoomable Elements
 	this.main = this.svg
-		.append("svg:g")
-		.attr("transform", "translate(0) scale(1)")
-		.attr("class", "main");
+	.append("svg:g")
+	.attr("transform", "translate(0) scale(1)")
+	.attr("class", "main");
 	//Highlight on over layer
 	this.main.append("svg:rect")
-		.attr("class", "graph-highlight")
-		.attr("fill", '#000000')
-		.attr("fill-opacity", 0.20)
-		.attr("rx", 5)
-		.attr("ry", 5);
+	.attr("class", "graph-highlight")
+	.attr("fill", '#000000')
+	.attr("fill-opacity", 0.20)
+	.attr("rx", 5)
+	.attr("ry", 5);
 	//ThemeLines layer
 	this.main.append("svg:g")
-		.attr("class", "themeLines");
+	.attr("class", "themeLines");
 	//Boxs layer
 	this.main.append("svg:g")
-		.attr("class", "boxes");
+	.attr("class", "boxes");
 	//Links layer
 	this.main.append("svg:g")
-		.attr("class", "links");
+	.attr("class", "links");
 	//Alignment Helper
 	this.main.append("svg:line")
-		.attr("class", "graph-alignmentH")
-		.attr("fill-opacity", 0)
-		.attr("stroke", "#ff0000")
-		.attr("stroke-width", 1)
-		.attr("stroke-opacity", 0.5)
-		.attr("stroke-dasharray", "3,3");
+	.attr("class", "graph-alignmentH")
+	.attr("fill-opacity", 0)
+	.attr("stroke", "#ff0000")
+	.attr("stroke-width", 1)
+	.attr("stroke-opacity", 0.5)
+	.attr("stroke-dasharray", "3,3");
 	this.main.append("svg:line")
-		.attr("class", "graph-alignmentV")
-		.attr("fill-opacity", 0)
-		.attr("stroke", "#ff0000")
-		.attr("stroke-width", 1)
-		.attr("stroke-opacity", 0.5)
-		.attr("stroke-dasharray", "3,3");
+	.attr("class", "graph-alignmentV")
+	.attr("fill-opacity", 0)
+	.attr("stroke", "#ff0000")
+	.attr("stroke-width", 1)
+	.attr("stroke-opacity", 0.5)
+	.attr("stroke-dasharray", "3,3");
 	//Nodes layer
 	this.main.append("svg:g")
-		.attr("class", "nodes");
+	.attr("class", "nodes");
 	//Selector layer
 	this.main.append("svg:g")
-		.attr("class", "selectors")
-		.attr("visibility", "hidden");
+	.attr("class", "selectors")
+	.attr("visibility", "hidden");
 	//GraphSelector layer
 	this.main.append("svg:rect")
-		.attr("class", "graph-selector")
-		.attr("fill", '#000000')
-		.attr("fill-opacity", 0.05)
-		.attr("stroke-width", 0.5)
-		.attr("stroke-dasharray", "3,3")
-		.attr("rx", 5)
-		.attr("ry", 5)
-		.attr("stroke", '#000000');
+	.attr("class", "graph-selector")
+	.attr("fill", '#000000')
+	.attr("fill-opacity", 0.05)
+	.attr("stroke-width", 0.5)
+	.attr("stroke-dasharray", "3,3")
+	.attr("rx", 5)
+	.attr("ry", 5)
+	.attr("stroke", '#000000');
 
 	var self = this;
 
@@ -142,7 +142,7 @@ Graph.prototype.init = function()
 	}
 	// this.svg.eventHandler = new graphEvent(this);
 	this.svg.call(graphEvent.zoom(this)
-		.on("zoom", onZoom));
+	.on("zoom", onZoom));
 	this.svg.on('contextmenu', function() {
 		d3.event.preventDefault();
 	});
@@ -283,8 +283,8 @@ Graph.prototype.redraw = function()
 		this.nodes[i].updateConnect();
 	}
 	// for (var i in this.all){
-		// if (this.all[i].type != 0)
-			// this.all[i].redraw();
+	// if (this.all[i].type != 0)
+	// this.all[i].redraw();
 	// }
 }
 
@@ -384,27 +384,27 @@ Graph.prototype.selector = function()
 Graph.prototype.hideSelector = function()
 {
 	this.svg.select(".selectors").selectAll('.selector')
-		.attr("visibility", "hidden");
+	.attr("visibility", "hidden");
 }
 
 Graph.prototype.hideHighlight = function()
 {
 	this.svg.select(".graph-highlight")
-		.attr('visibility', 'hidden');
+	.attr('visibility', 'hidden');
 }
 
 Graph.prototype.hideAlignmentHelper = function()
 {
 	this.svg.select(".graph-alignmentH")
-		.attr('visibility', 'hidden');
+	.attr('visibility', 'hidden');
 	this.svg.select(".graph-alignmentV")
-		.attr('visibility', 'hidden');
+	.attr('visibility', 'hidden');
 }
 
 Graph.prototype.hideGraphSelector = function()
 {
 	this.svg.select(".graph-selector")
-		.attr('visibility', 'hidden');
+	.attr('visibility', 'hidden');
 }
 
 Graph.prototype.hideHelpers = function()
@@ -434,26 +434,26 @@ Graph.prototype.pos = function(x, y)
 Graph.prototype.screenToCanvas = function(pos)
 {
 	return pos.x ?
-		{x:(pos.x - this.translateX())/this.scale(),
+	{x:(pos.x - this.translateX())/this.scale(),
 		y:(pos.y - this.translateY())/this.scale()}
 		:
 		[(pos[0] - this.translateX())/this.scale(),
 		(pos[1] - this.translateY())/this.scale()];
-}
+	}
 
-Graph.prototype.snap = function(pos)
-{
-	return pos.x ?
+	Graph.prototype.snap = function(pos)
+	{
+		return pos.x ?
 		{x:this.gridSize * Math.round(pos.x / this.gridSize),
-		y:this.gridSize * Math.round(pos.y / this.gridSize)}
-		:
-		[this.gridSize * Math.round(pos[0] / this.gridSize),
-		this.gridSize * Math.round(pos[1] / this.gridSize)];
-}
+			y:this.gridSize * Math.round(pos.y / this.gridSize)}
+			:
+			[this.gridSize * Math.round(pos[0] / this.gridSize),
+			this.gridSize * Math.round(pos[1] / this.gridSize)];
+		}
 
-Graph.prototype.visibleArea = function()
-{
-	var $g = $('#graph_'+this.id);
-	return [this.screenToCanvas([0, 0]),
-		this.screenToCanvas([$g.width(),$g.height()])];
-}
+		Graph.prototype.visibleArea = function()
+		{
+			var $g = $('#graph_'+this.id);
+			return [this.screenToCanvas([0, 0]),
+			this.screenToCanvas([$g.width(),$g.height()])];
+		}

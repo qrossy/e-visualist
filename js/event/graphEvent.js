@@ -4,156 +4,156 @@
 graphEvent.zoom = function(graph) {
 
   var x = 0,
-      y = 0,
-      z = 0,
-	  g = graph,
-      listeners = [],
-      pan,
-      zoom,
-	  initPos = [0, 0],
-	  prevPos,
-	  newPos,
-	  verbose = false,
-	  nodes = false,
-	  hideLabels = false;
+  y = 0,
+  z = 0,
+  g = graph,
+  listeners = [],
+  pan,
+  zoom,
+  initPos = [0, 0],
+  prevPos,
+  newPos,
+  verbose = false,
+  nodes = false,
+  hideLabels = false;
 
   function zoom() {
     var container = this
-        .on("mousedown", mousedown)
-        .on("mousewheel", mousewheel)
-        .on("DOMMouseScroll", mousewheel)
-        .on("dblclick", mousewheel)
-        .on("mousemove", mousemove)
-        .on("mouseup", mouseup);
+    .on("mousedown", mousedown)
+    .on("mousewheel", mousewheel)
+    .on("DOMMouseScroll", mousewheel)
+    .on("dblclick", mousewheel)
+    .on("mousemove", mousemove)
+    .on("mouseup", mouseup);
   }
 
   function mousedown(d, i) {
-  	if (verbose) log('Graph Down '+g.id);
-  	nodes = false
-  	initPos = [d3.event.pageX, d3.event.pageY];
-  	prevPos = initPos;
-  	if (Interface.modifiedEntity){
-  		var entity = g.get(Interface.modifiedEntity.id);
-  		var data = entity.getData();
-  		entity.setData(Interface.modifiedEntity);
-  		entity.redraw();
-  		entity.redrawLabels();
-  		g.ctrl.addAction(Action.change, {e:entity, data:data});
-  		g.ctrl.run();
-  		Interface.modifiedEntity = null;
-  		//Interface.get().setKeyEvents();
-  	}
-  	if (Interface.modifiedLabel){
-  		var html = Interface.modifiedLabel.getHtml();
-  		Interface.modifiedLabel.setHtml(Interface.modifiedLabel.oldLabel);
-  		g.ctrl.addAction(Action.changeLabel, {l:Interface.modifiedLabel, txt:html});
-  		g.ctrl.run();
-  		Interface.modifiedLabel = null;
-  	}
-  	var div = Interface.get().popupDiv;
-  	$(div).fadeOut()
+    if (verbose) log('Graph Down '+g.id);
+    nodes = false
+    initPos = [d3.event.pageX, d3.event.pageY];
+    prevPos = initPos;
+    if (Interface.modifiedEntity){
+      var entity = g.get(Interface.modifiedEntity.id);
+      var data = entity.getData();
+      entity.setData(Interface.modifiedEntity);
+      entity.redraw();
+      entity.redrawLabels();
+      g.ctrl.addAction(Action.change, {e:entity, data:data});
+      g.ctrl.run();
+      Interface.modifiedEntity = null;
+      //Interface.get().setKeyEvents();
+    }
+    if (Interface.modifiedLabel){
+      var html = Interface.modifiedLabel.getHtml();
+      Interface.modifiedLabel.setHtml(Interface.modifiedLabel.oldLabel);
+      g.ctrl.addAction(Action.changeLabel, {l:Interface.modifiedLabel, txt:html});
+      g.ctrl.run();
+      Interface.modifiedLabel = null;
+    }
+    var div = Interface.get().popupDiv;
+    $(div).fadeOut()
 
-  	//Added to catch the offset of a TimeBar translate
-  	x = g.main.node().transform.baseVal.getItem(0).matrix.e;
+    //Added to catch the offset of a TimeBar translate
+    x = g.main.node().transform.baseVal.getItem(0).matrix.e;
 
-  	if (d3.event.which == 3 && d3.event.target.tagName == 'svg'){
-  		Interface.padding = true;
-  		document.body.style.cursor = '-moz-grab';
-  		pan = {
-  		  x0: x - d3.event.clientX,
-  		  y0: y - d3.event.clientY,
-  		  target: this,
-  		  data: d,
-  		  index: i
-  		};
-  	}
-  	else if (d3.event.target.tagName == 'svg'){
-  		g.hideHelpers();
-  		d3.event.e == null;
-  		Interface.get().updateProperties(d3.event);
-  		var pos = g.pos(initPos[0], initPos[1]);
-  		g.svg.select(".graph-selector")
-  			.attr("x", pos[0])
-  			.attr("y", pos[1])
-  			.attr("width", 0)
-  			.attr("height", 0)
-  			.attr('visibility', 'visible');
-  	}
-      d3.event.preventDefault();
-      //window.focus(); // TODO focusableParent
+    if (d3.event.which == 3 && d3.event.target.tagName == 'svg'){
+      Interface.padding = true;
+      document.body.style.cursor = '-moz-grab';
+      pan = {
+        x0: x - d3.event.clientX,
+        y0: y - d3.event.clientY,
+        target: this,
+        data: d,
+        index: i
+      };
+    }
+    else if (d3.event.target.tagName == 'svg'){
+      g.hideHelpers();
+      d3.event.e == null;
+      Interface.get().updateProperties(d3.event);
+      var pos = g.pos(initPos[0], initPos[1]);
+      g.svg.select(".graph-selector")
+      .attr("x", pos[0])
+      .attr("y", pos[1])
+      .attr("width", 0)
+      .attr("height", 0)
+      .attr('visibility', 'visible');
+    }
+    d3.event.preventDefault();
+    //window.focus(); // TODO focusableParent
   }
 
   function mousemove() {
-	// if (d3.event.target.tagName == 'svg'){
-		// document.body.style.cursor = 'default';
-	// }
-	if (verbose){ log('Graph Move '+g.id);}
+    // if (d3.event.target.tagName == 'svg'){
+    // document.body.style.cursor = 'default';
+    // }
+    if (verbose){ log('Graph Move '+g.id);}
     zoom = null;
-	newPos = [d3.event.pageX, d3.event.pageY];
-	if (pan){
-		document.body.style.cursor = '-moz-grabbing';
-		if ($("#visualist_timebar").is(':visible')){
-			Interface.timebar.getBand(0)._moveEther((newPos[0]-prevPos[0]));
-		}
-		x = d3.event.clientX + pan.x0;
-		y = d3.event.clientY + pan.y0;
-		dispatch.call(pan.target, pan.data, pan.index);
-	}
-	else if (g.svg.select(".graph-selector").attr('visibility') == 'visible'){
+    newPos = [d3.event.pageX, d3.event.pageY];
+    if (pan){
+      document.body.style.cursor = '-moz-grabbing';
+      if ($("#visualist_timebar").is(':visible')){
+        Interface.timebar.getBand(0)._moveEther((newPos[0]-prevPos[0]));
+      }
+      x = d3.event.clientX + pan.x0;
+      y = d3.event.clientY + pan.y0;
+      dispatch.call(pan.target, pan.data, pan.index);
+    }
+    else if (g.svg.select(".graph-selector").attr('visibility') == 'visible'){
 
-		var selector = g.svg.select(".graph-selector");
-		var w = newPos[0]-initPos[0];
-		var h = newPos[1]-initPos[1];
-		var pos = g.pos(newPos[0], newPos[1]);
-		if (newPos[0] < initPos[0]){
-			selector.attr("x", pos[0]);
-			w = initPos[0]-newPos[0];
-		}
-		if (newPos[1] < initPos[1]){
-			selector.attr("y", pos[1]);
-			h = initPos[1]-newPos[1];
-		}
-		g.hideSelector();
-		selector.attr("width", w/g.scale()).attr("height", h/g.scale());
-		var box = [
-			g.pos(Math.min(initPos[0], newPos[0]),Math.min(initPos[1], newPos[1])),
-			g.pos(Math.max(initPos[0], newPos[0]),Math.max(initPos[1], newPos[1]))
-		];
-		nodes = g.getNodes(box);
-		for (var n in nodes){
-			nodes[n].selector.update();
-		}
-	}
-	prevPos = newPos;
+      var selector = g.svg.select(".graph-selector");
+      var w = newPos[0]-initPos[0];
+      var h = newPos[1]-initPos[1];
+      var pos = g.pos(newPos[0], newPos[1]);
+      if (newPos[0] < initPos[0]){
+        selector.attr("x", pos[0]);
+        w = initPos[0]-newPos[0];
+      }
+      if (newPos[1] < initPos[1]){
+        selector.attr("y", pos[1]);
+        h = initPos[1]-newPos[1];
+      }
+      g.hideSelector();
+      selector.attr("width", w/g.scale()).attr("height", h/g.scale());
+      var box = [
+        g.pos(Math.min(initPos[0], newPos[0]),Math.min(initPos[1], newPos[1])),
+        g.pos(Math.max(initPos[0], newPos[0]),Math.max(initPos[1], newPos[1]))
+      ];
+      nodes = g.getNodes(box);
+      for (var n in nodes){
+        nodes[n].selector.update();
+      }
+    }
+    prevPos = newPos;
   }
-
+  
   function mouseup() {
-	if (verbose) log('Graph Up '+g.id);
+    if (verbose) log('Graph Up '+g.id);
     if (pan) {
       mousemove();
       pan = null;
     }
-	Interface.padding = false;
-	document.body.style.cursor = 'default';
-	g.svg.select(".graph-selector").attr('visibility', 'hidden');
-	$('.visualist_linkSelector a').css('border-color','#ffffff');
+    Interface.padding = false;
+    document.body.style.cursor = 'default';
+    g.svg.select(".graph-selector").attr('visibility', 'hidden');
+    $('.visualist_linkSelector a').css('border-color','#ffffff');
 
-	if (newPos){
-		prevPos = false;
-		if (Interface.addingLink && nodes.length > 1){
-			Interface.createRelation(d3.event, nodes);
-		}
-	}
-	$(".visualist_linkSelector_type").find('input').each(function(){
-		$(this).attr('checked', false);
-		$(this).button('refresh');
-	});
-  var elemClass = $(d3.event.target).parent('g').attr('class');
-  if (elemClass != 'nodeEntity'){
-	   Interface.addingLink = false;
-     g.svg.select(".tempLink").remove();
- 		 document.body.style.cursor = 'default';
-     }
+    if (newPos){
+      prevPos = false;
+      if (Interface.addingLink && nodes.length > 1){
+        Interface.createRelation(d3.event, nodes);
+      }
+    }
+    $(".visualist_linkSelector_type").find('input').each(function(){
+      $(this).attr('checked', false);
+      $(this).button('refresh');
+    });
+    var elemClass = $(d3.event.target).parent('g').attr('class');
+    if (elemClass != 'nodeEntity'){
+      Interface.addingLink = false;
+      g.svg.select(".tempLink").remove();
+      document.body.style.cursor = 'default';
+    }
   }
 
   // mousewheel events are totally broken!
@@ -161,14 +161,14 @@ graphEvent.zoom = function(graph) {
   // not only that, but Chrome and Safari differ in re. to acceleration!
 
   var outer = d3.select("body").append("div")
-      .style("visibility", "hidden")
-      .style("position", "absolute")
-      .style("top", "-3000px")
-      .style("height", 0)
-      .style("overflow-y", "scroll")
-    .append("div")
-      .style("height", "2000px")
-    .node().parentNode;
+  .style("visibility", "hidden")
+  .style("position", "absolute")
+  .style("top", "-3000px")
+  .style("height", 0)
+  .style("overflow-y", "scroll")
+  .append("div")
+  .style("height", "2000px")
+  .node().parentNode;
 
   function mousewheel(d, i) {
     if (verbose) log('Graph Wheel '+g.id);
@@ -176,8 +176,8 @@ graphEvent.zoom = function(graph) {
     // initialize the mouse location for zooming (to avoid drift)
     if (!zoom) {
       var p = d3.mouse(this.nearestViewportElement || this);
-	  //Added to catch the offset of a TimeBar translate
-	  x = g.main.node().transform.baseVal.getItem(0).matrix.e;
+      //Added to catch the offset of a TimeBar translate
+      x = g.main.node().transform.baseVal.getItem(0).matrix.e;
       zoom = {
         x0: x,
         y0: y,
@@ -204,18 +204,18 @@ graphEvent.zoom = function(graph) {
       }
       z += delta;
     }
-	if (z <= -1.5 && !hideLabels){
-		g.svg.selectAll('foreignObject').each(function() {$(this).attr("visibility", "hidden");});
-		//g.svg.selectAll('path').each(function() {$(this).attr("shape-rendering", "crispEdges");});
-		//g.svg.selectAll('image').each(function() {$(this).attr("image-rendering", "optimize-speed");});
-		hideLabels = true;
-	}
-	else if (z >= -1.5 && hideLabels){
-		g.svg.selectAll('foreignObject').each(function() {$(this).attr("visibility", "visible");});
-		//g.svg.selectAll('path').each(function() {$(this).attr("shape-rendering", "geometric-precision");});
-		//g.svg.selectAll('image').each(function() {$(this).attr("image-rendering", "optimize-quality");});
-		hideLabels = false;
-	}
+    if (z <= -1.5 && !hideLabels){
+      g.svg.selectAll('foreignObject').each(function() {$(this).attr("visibility", "hidden");});
+      //g.svg.selectAll('path').each(function() {$(this).attr("shape-rendering", "crispEdges");});
+      //g.svg.selectAll('image').each(function() {$(this).attr("image-rendering", "optimize-speed");});
+      hideLabels = true;
+    }
+    else if (z >= -1.5 && hideLabels){
+      g.svg.selectAll('foreignObject').each(function() {$(this).attr("visibility", "visible");});
+      //g.svg.selectAll('path').each(function() {$(this).attr("shape-rendering", "geometric-precision");});
+      //g.svg.selectAll('image').each(function() {$(this).attr("image-rendering", "optimize-quality");});
+      hideLabels = false;
+    }
     // adjust x and y to center around mouse location
     var k = Math.pow(2, z - zoom.z0) - 1;
     x = zoom.x0 + zoom.x1 * k;
@@ -227,11 +227,11 @@ graphEvent.zoom = function(graph) {
 
   function dispatch(d, i) {
     var o = d3.event, // Events can be reentrant (e.g., focus).
-        k = Math.pow(2, z);
+    k = Math.pow(2, z);
     d3.event = {
-	  x: d3.event.layerX,
+      x: d3.event.layerX,
       scale: k,
-	  pan: pan ? true : false,
+      pan: pan ? true : false,
       translate: [x, y],
       transform: function(sx, sy) {
         if (sx) transform(sx, x);
@@ -241,7 +241,7 @@ graphEvent.zoom = function(graph) {
 
     function transform(scale, o) {
       var domain = scale.__domain || (scale.__domain = scale.domain()),
-          range = scale.range().map(function(v) { return (v - o) / k; });
+      range = scale.range().map(function(v) { return (v - o) / k; });
       scale.domain(domain).domain(range.map(scale.invert));
     }
 

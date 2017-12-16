@@ -19,7 +19,7 @@ var undo = false;
 */
 
 Action.createNode = function CreateNode(params, undo)
-{	
+{
 	if (!undo){
 		if (params.e.toString() == '[object Object]'){
 			var node = new Node(params.e);
@@ -44,7 +44,7 @@ Action.createNode = function CreateNode(params, undo)
 */
 
 Action.createRelation = function CreateRelation(params, undo)
-{	
+{
 	if (!undo){
 		if (!params.e){
 			if (params.type == 'link'){
@@ -61,14 +61,14 @@ Action.createRelation = function CreateRelation(params, undo)
 				var entity = new Polygon(params.prop);
 			}
 			params.e = entity;
-		} 
+		}
 		for (var i in params.linked){
 			var e = typeof(params.linked[0]) == 'number' ? params.g.get(params.linked[i]) : params.linked[i];
 			params.e.addConnect(e);
 		}
 		//Manage position of link (if more than one link between entities)
 		if (params.e.type == 1){
-			if (!params.g.relations[params.e.hash()]){ 
+			if (!params.g.relations[params.e.hash()]){
 				params.g.relations[params.e.hash()] = {0:params.e};
 				params.e.space = 0;
 			}
@@ -98,7 +98,7 @@ Action.createRelation = function CreateRelation(params, undo)
 * @param {g:Graph, e:Link, dist:float, index:int, id:String} params
 */
 Action.createCorner = function CreateCorner(params, undo)
-{	
+{
 	var links = params.g.relations[params.e.hash()];
 	if (params.e.connectCount() == 2){
 		var path = links[0].getMainPath();
@@ -131,7 +131,7 @@ Action.createCorner = function CreateCorner(params, undo)
 * @param {d:d, path:path} params d = pathSegments and path = <Path>
 */
 Action.moveCorner = function MoveCorner(params, undo)
-{	
+{
 	var oldd = params.path.attr('d');
 	params.path.attr('d', params.d);
 	params.d = oldd;
@@ -144,7 +144,7 @@ Action.moveCorner = function MoveCorner(params, undo)
 * @param {g:Graph, e:Link, index:int, id:String} params
 */
 Action.removeCorner = function RemoveCorner(params, undo)
-{	
+{
 	var links = params.g.relations[params.e.hash()];
 	if (params.e.connectCount() == 2){
 		var path = links[0].getMainPath();
@@ -170,18 +170,6 @@ Action.removeCorner = function RemoveCorner(params, undo)
 }
 
 /**
-* Move Corner
-*
-* @param {d:d, path:path} params d = pathSegments and path = <Path>
-*/
-Action.moveCorner = function MoveCorner(params, undo)
-{	
-	var oldd = params.path.attr('d');
-	params.path.attr('d', params.d);
-	params.d = oldd;
-}
-
-/**
 * Add Entity
 *
 *@param {e:Entity, g:Graph} entity New instance of Node, Link, Box or Polygon
@@ -199,7 +187,7 @@ Action.add = function Add(params, undo)
 			params.e.addToTimebar();
 		}
 	}
-	
+
 	else{
 		params.e.svg.remove();
 		params.e.selector.svg.remove();
@@ -224,7 +212,7 @@ Action.removeEntity = function RemoveEntity(params, undo)
 	else if (params.e.type == 1){
 		Action.removeLink(params, undo);
 	}
-    else if (params.e.type == 2 || params.e.type == 3){
+	else if (params.e.type == 2 || params.e.type == 3){
 		Action.removeBox(params, undo);
 	}
 }
@@ -237,7 +225,7 @@ Action.removeEntity = function RemoveEntity(params, undo)
 Action.removeNode = function RemoveNode(params, undo)
 {
 	if (!undo){
-		params.e.svg.remove();	
+		params.e.svg.remove();
 		delete params.g.all[params.e.id];
 		delete params.g.nodes[params.e.id];
 		for (var id in params.e.connect){
@@ -260,9 +248,9 @@ Action.removeNode = function RemoveNode(params, undo)
 		for (var id in params.e.connect){
 			var c = params.e.connect[id];
 			if (c.type == 1){
-				typeof(params.g.relations[c.hash()]) == 'undefined' ? 
-					params.g.relations[c.hash()] = {0: c}:
-					params.g.relations[c.hash()][c.space] = c;
+				typeof(params.g.relations[c.hash()]) == 'undefined' ?
+				params.g.relations[c.hash()] = {0: c}:
+				params.g.relations[c.hash()][c.space] = c;
 			}
 			for (var id in c.connect){
 				id != params.e.id ? c.connect[id].connect[c.id] = c : false;
@@ -282,7 +270,7 @@ Action.removeLink = function RemoveLink(params, undo)
 {
 	var links = params.g.relations[params.e.hash()];
 	if (!undo){
-		params.e.svg.remove();	
+		params.e.svg.remove();
 		delete params.g.all[params.e.id];
 		delete links[params.e.space];
 		for (var s in links){
@@ -323,7 +311,7 @@ Action.removeLink = function RemoveLink(params, undo)
 		links[params.e.space] = params.e;
 		params.e.create();
 		params.e.redraw();
-        for (var id in params.e.connect){
+		for (var id in params.e.connect){
 			params.e.connect[id].connect[params.e.id] = params.e;
 		}
 	}
@@ -336,8 +324,8 @@ Action.removeLink = function RemoveLink(params, undo)
 */
 Action.removeBox = function RemoveBox(params, undo)
 {
-    if (!undo){
-		params.e.svg.remove();	
+	if (!undo){
+		params.e.svg.remove();
 		delete params.g.all[params.e.id];
 		for (var id in params.e.connect){
 			delete params.e.connect[id].connect[params.e.id];
@@ -347,7 +335,7 @@ Action.removeBox = function RemoveBox(params, undo)
 		params.g.all[params.e.id] = params.e;
 		params.e.create();
 		params.e.redraw();
-        for (var id in params.e.connect){
+		for (var id in params.e.connect){
 			params.e.connect[id].connect[params.e.id] = params.e;
 		}
 	}
@@ -452,5 +440,3 @@ Action.composite = function Composite(params, undo)
 Action.empty = function Start(params, undo)
 {
 }
-
-
