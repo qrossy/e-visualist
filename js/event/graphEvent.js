@@ -149,7 +149,6 @@ graphEvent.zoom = function(graph) {
 		$(this).button('refresh');
 	});
   var elemClass = $(d3.event.target).parent('g').attr('class');
-  log($(d3.event.target));
   if (elemClass != 'nodeEntity'){
 	   Interface.addingLink = false;
      g.svg.select(".tempLink").remove();

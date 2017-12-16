@@ -112,9 +112,14 @@ Label.prototype.create = function()
 			if(self.e.type == 1){d3.event.path = self.linkPath;}
 			self.e.eventHandler.creationPopup(d3.event);
 		}
-		Interface.addingLink = false;
-		self.e.g.svg.select(".tempLink").remove();
-		document.body.style.cursor = 'default';
+		else if (Interface.addingLink){
+			if (self.e != Interface.addingLink.from){
+				Interface.createRelation(event, [Interface.addingLink.from, self.e]);
+			}
+			Interface.addingLink = false;
+			self.e.g.svg.select(".tempLink").remove();
+			document.body.style.cursor = 'default';
+		}
 	}
 
 	this.svg.on('dblclick', onDblClick);
