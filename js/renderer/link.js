@@ -38,7 +38,7 @@ function Link(params)
 		data.secondColor = this.secondColor;	// Target to Center color (for bidirectional link)
 		data.distToLink = this.distToLink;		// distance between links (if more than one link between same Nodes)
 		data.distToNode = this.distToNode;		// distance between first ctrlPoint and Node
-		data.mainPath = this.svg.select(".mainPath").attr("d");			// pathData to store Corners
+		data.mainPath = this.getRootMainPath();			// pathData to store Corners
 		data.source = this.source ? this.source.id : null;
 		data.target = this.target ? this.target.id : null;
 		return data;
@@ -71,13 +71,14 @@ Link.prototype.create = function()
 		var p = this.svg.append("svg:path")
 			.attr("class", "e"+i)
 			.attr("fill-opacity", 0)
-			.attr("pointer-events", "stroke")
+			.attr("pointer-events", "none")
 			.attr("stroke-linejoin", "round");
 			//.attr("stroke-linecap", "round"); //	butt | round | square | inherit
 		this.svg.append("svg:path")
 			.attr("class", "click_e"+i) //last letter needs to be "e", split("e") in linkEvent
 			.attr("stroke-width", 5)
-			.attr("pointer-events", "all")
+			.attr("fill-opacity", 0)
+			.attr("pointer-events", "stroke")
 			.attr("visibility", "hidden");
 	}
 
