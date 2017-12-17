@@ -28,7 +28,7 @@ Interface.entityType = 0;
 Interface.dragging = false;
 Interface.modifiedEntity = null;
 Interface.modifiedLabel = null;
-Interface.SelectedCorner = null;
+Interface.selectedCorner = null;
 Interface.timebar;
 Interface.resizeTimerID;
 Interface.padding = false;
@@ -104,7 +104,7 @@ Interface.prototype.setKeyEvents = function()
 {
 	$(document).keydown(function(event) {
 		event.preventDefault();
-		if(event.keyCode == 18){
+		if(event.keyCode == 18){ // click Alt to add link !
 			if (!Interface.addingLink){
 				Interface.addingLink = new Object();
 				Interface.addingLink.type = 'link';
@@ -115,17 +115,17 @@ Interface.prototype.setKeyEvents = function()
 	$(document).keyup(function(event) {
 		event.preventDefault();
 		event.stopPropagation();
-		if(event.keyCode == 8){
+		if(event.keyCode == 8 || event.keyCode == 46){
 			var g = Interface.get().currentGraph;
-			if (Interface.SelectedCorner){
-				var info = Interface.SelectedCorner.attr('class').split('_');
+			if (Interface.selectedCorner){
+				var info = Interface.selectedCorner.attr('class').split('_');
 				g.ctrl.addAction(Action.removeCorner, {
 					g: g,
-					e: g.get(Interface.SelectedCorner.parent().attr('entity')),
+					e: g.get(Interface.selectedCorner.parent().attr('entity')),
 					index: parseInt(info[2]),
 					id: info[0]});
 					g.ctrl.run();
-					Interface.SelectedCorner = false;
+					Interface.selectedCorner = false;
 				}
 				else{
 					var actions = new Array();

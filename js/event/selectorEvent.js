@@ -18,7 +18,7 @@ selectorEvent.prototype.down = function(event)
 	}
 	else if (this.e.elem.type == 1){
 		$(event.target).attr("fill", '#ff0000');
-		Interface.SelectedCorner = $(event.target);
+		Interface.selectedCorner = $(event.target);
 		this.initialCP = $(event.target).attr('class');
 		var info = this.initialCP.split("_");
 		if(info[0] != 'center'){
@@ -156,7 +156,7 @@ selectorEvent.prototype.up = function(event)
 	if (!this.newPos){
 		return;
 	}
-	Interface.SelectedCorner = null;
+	Interface.selectedCorner = null;
 	if (this.e.elem.type == 0){
 		var newBox = this.e.elem.bBox();
 		// if (this.e.elem.set){
