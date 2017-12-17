@@ -1,4 +1,4 @@
-linkEvent.prototype.toString = function() 
+linkEvent.prototype.toString = function()
 {
 	return "LinkEvent";
 }
@@ -13,17 +13,17 @@ linkEvent.prototype.down = function(event)
 {
 	this.initObjPos = this.e.getPosition();
 	this.initPos = {
-		x:event.pageX, 
+		x:event.pageX,
 		y:event.pageY
 	};
 	this.prevPos = this.initObjPos;
 	this.isThemeLink = this.e.isThemeLink();
-	
+
 	this.hasStopped = false;
-	
+
 	var zones = null;
 	this.g.zonesByEntity ? zones = this.g.zonesByEntity[this.e.id] : false;
-	
+
 	if (Interface.addingCorner){
 		var point = this.g.pos(event.pageX, event.pageY);
 		if (this.e.connectCount() == 2 && this.e.arrow == this.e.id){
@@ -53,65 +53,65 @@ linkEvent.prototype.move = function(event)
 	if (this.hasStopped || !this.isThemeLink){
 		return;
 	}
-	
+
 	this.newPos = {
 		x:this.initObjPos.x+(event.pageX-this.initPos.x)/this.g.scale(),
 		y:this.initObjPos.y+(event.pageY-this.initPos.y)/this.g.scale()
 	};
-	
+
 	if (!Interface.padding){
 		this.e.selector.clear();
 	}
 	Interface.padding = true;
-	
+
 	this.e.x = this.newPos.x;
 	this.e.redraw();
-	
+
 	//Update TimeBar
 	if (this.e.ctrlDateTime == 0 || !this.e.startDateTime || $("#visualist_timebar").is(':hidden')){
 		return;
 	}
-	
+
 	var zones = this.g.zonesByEntity[this.e.id];
-	
+
 	//If this is the first controlled Event, everything move
 	if (Interface.timebar.getBand(0).getEtherPainter()._zones[0].endTime == this.e.startDateTime.getTime()){
 		Interface.timebar.getBand(0)._moveEther(this.newPos.x-this.prevPos.x);
 	}
-	
+
 	if (zones.start && this.e.ctrlDateTime == 1){
 		var startMagnify = zones.start.magnify - (this.newPos.x - this.prevPos.x)/(zones.start.delta/(3600*10*24));
 		if (startMagnify < 0.01 && startMagnify < zones.start.magnify){
 			this.hasStopped = true;
 		}
 	}
-	
+
 	if (zones.end){
 		var endMagnify = zones.end.magnify + (this.newPos.x - this.prevPos.x)/(zones.end.delta/(3600*10*24));
 		if (endMagnify < 0.01 && endMagnify < zones.end.magnify){
 			this.hasStopped = true;
 		}
 	}
-	
+
 	if (this.hasStopped){
 		this.newPos = this.prevPos;
 		return;
 	}
-	
+
 	if (zones.start && this.e.ctrlDateTime == 1){
 		zones.start.magnify = startMagnify;
 		zones.start.unit = Interface.timeBarParams.intervalUnit - parseInt(zones.start.magnify/2);
 	}
-	
+
 	if (zones.end){
 		zones.end.magnify = endMagnify;
 		zones.end.unit = Interface.timeBarParams.intervalUnit - parseInt(zones.end.magnify/2);
 	}
-	
+
 	Interface.UpdateTimebar(this.g.timeZones);
-	
+
 	// Update Other Entities
-	
+
 	if (this.e.ctrlDateTime == 2){
 		for (var id in this.g.all){
 			var e = this.g.all[id];
@@ -122,7 +122,7 @@ linkEvent.prototype.move = function(event)
 			}
 		}
 	}
-	
+
 	this.prevPos = this.newPos;
 }
 
@@ -138,7 +138,7 @@ linkEvent.prototype.up = function(event)
 			this.g.ctrl.run();
 		}
 	}
-	
+
 	delete this.prevPos;
 	delete this.newPos;
 	Interface.padding = false;
@@ -146,7 +146,7 @@ linkEvent.prototype.up = function(event)
 }
 
 linkEvent.prototype.over = function(event)
-{		
+{
 	document.body.style.cursor = 'crosshair';
 	if (Interface.dragging){
 		return;
@@ -162,7 +162,7 @@ linkEvent.prototype.out = function(event)
 }
 
 linkEvent.prototype.creationPopup = function(event)
-{		
+{
 	var div = Interface.get().popupDiv;
 	$(div)
 		.css("left", event.pageX-115)
@@ -177,7 +177,7 @@ linkEvent.prototype.creationPopup = function(event)
 		.attr("height", 100);
 	var segments = event.path ? event.path.pathSegList : event.target.pathSegList;
 	var v = Link.vector(segments.getItem(1), segments.getItem(segments.numberOfItems-2));
-	
+
 	var createLine = function(from, to){
 		var line = svg.append("svg:g");
 		line.append("svg:path")
@@ -196,7 +196,7 @@ linkEvent.prototype.creationPopup = function(event)
 			.attr("d", "M"+from+" L"+to);
 		return line;
 	}
-	
+
 	var dist = 4; // ArrowLength
 	var space = 5; // ArrowSpace
 	var arrow = function(point, reverse){
@@ -206,7 +206,7 @@ linkEvent.prototype.creationPopup = function(event)
 		d += " L"+(point.x + dist*v.ux() - (space*v.uy()))+","+(point.y + dist*v.uy() - (-space*v.ux()));
 		return d;
 	}
-	
+
 	var s = 10;
 	var margin = 15;
 	var c = {x:s+margin+5, y:s+margin};
@@ -248,7 +248,7 @@ linkEvent.prototype.creationPopup = function(event)
 			var d = arrow(point, true);
 			line.select(".arrow").attr('d', line.select(".arrow").attr('d')+d);
 			var id = event.path ? $(event.path).attr('class').split("e")[1]: $(event.target).attr('class').split("e")[1];
-			line.on('mouseup', function(){	
+			line.on('mouseup', function(){
 				if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.e.getData();
 				self.e.arrow = id;
 				self.e.arrowOthers = true;
@@ -276,7 +276,7 @@ linkEvent.prototype.creationPopup = function(event)
 				if (self.e.connectCount() == 2){ $(this).parent().find('.ratio-ctrl').attr("visibility", 'visible');$('#SecondColorPicker').show();}
 				});
 			if (self.e.arrow == self.e.id) line.select(".arrow").attr("stroke", "red");
-			
+
 		}
 		c.x += s+margin;
 	}
@@ -300,21 +300,21 @@ linkEvent.prototype.creationPopup = function(event)
 	}
 	c.x += width+5;
 	svg.attr("width", c.x).attr("height", c.y+s+margin);
-	
+
 	//widthSlider
 	svgSlider(svg, 0, 0, "width", 1, 35, 1, "width", self.e);
-	
+
 	if (this.e.connectCount() == 2){
 		var ratioSvg = svg.append("svg:foreignObject")
 			.attr("x", 120)
 			.attr("y", 0)
 			.attr("width", 20)
-			.attr("height", 80)
+			.attr("height", 70)
 			.attr("class", "ratio-ctrl")
 			.attr("visibility", this.e.arrow == this.e.id ? 'visible' : 'hidden');
 		var rDiv = $('<div style="margin-left:5px;">');
 		rDiv.append('<input type="text" id="ratio" size="1"/>');
-		rDiv.append('<div id="slider-ratio" style="height:30px;"></div>');
+		rDiv.append('<div id="slider-ratio" style="height:25px;"></div>');
 		$(ratioSvg.node()).append(rDiv);
 		$("#slider-ratio").slider({
 				orientation: "vertical",
@@ -332,13 +332,13 @@ linkEvent.prototype.creationPopup = function(event)
 			});
 		$( "#ratio" ).val( $( "#slider-ratio" ).slider( "value" ));
 	}
-	var linkDiv = $('<div id="FirstColorPicker" style="text-align:center;">');
+	var linkDiv = $('<div id="FirstColorPicker" style="text-align:center;margin-top:2px;">');
 	var rColor = $('<span class="visualist_linkSelector_color">');
 	for (var i in Interface.colors){
 		var color = Interface.colors[i];
 		var link = $('<a href="#" title="'+color+'" style="background-color:'+color+'">&nbsp;&nbsp;&nbsp;</a>')
-			.click(function(e) { 
-				e.preventDefault(); 
+			.click(function(e) {
+				e.preventDefault();
 				if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.e.getData();
 				self.e.color = this.title;
 				self.e.redraw();
@@ -354,8 +354,8 @@ linkEvent.prototype.creationPopup = function(event)
 	for (var i in Interface.colors){
 		var color = Interface.colors[i];
 		var link = $('<a href="#" title="'+color+'" style="background-color:'+color+'">&nbsp;&nbsp;&nbsp;</a>')
-			.click(function(e) { 
-				e.preventDefault(); 
+			.click(function(e) {
+				e.preventDefault();
 				if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.e.getData();
 				self.e.secondColor = this.title;
 				self.e.redraw();
@@ -369,7 +369,7 @@ linkEvent.prototype.creationPopup = function(event)
 		linkDiv.hide();
 	}
 	div.append(linkDiv);
-	
+
 	// var eType = $('<div class="visualist_selector_type" style="margin-bottom:5px;">')
 	// eType.append('<input type="radio" id="visualist_selector_type1" name="radio" checked="checked" value="0"/><label for="visualist_selector_type1">Icon</label>');
 	// eType.append('<input type="radio" id="visualist_selector_type2" name="radio" value="1"/><label for="visualist_selector_type2">Box</label>');
@@ -377,7 +377,7 @@ linkEvent.prototype.creationPopup = function(event)
 	// eType.append('<input type="radio" id="visualist_selector_type4" name="radio" value="3"/><label for="visualist_selector_type4">Link</label>');
 	// eType.append('<input type="radio" id="visualist_selector_type5" name="radio" value="4"/><label for="visualist_selector_type5">Polygon</label>');
 	// eType.append('<input type="radio" id="visualist_selector_type6" name="radio" value="5"/><label for="visualist_selector_type6">LinkBox</label>');
-	
+
 	// eType.buttonset();
 	// eType.find('input').click(function() {
 		// var type = parseInt($(this).attr('value'));
@@ -394,9 +394,6 @@ linkEvent.prototype.creationPopup = function(event)
 		// }
 	// });
 	// div.append(eType);
-	
+
 	$(div).show();
 }
-
-
-

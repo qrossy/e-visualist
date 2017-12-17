@@ -287,6 +287,8 @@ nodeEvent.prototype.creationPopup = function(event)
 		self.e.shape = 0;
 		self.e.create();
 		self.e.redraw();
+		self.e.selector.update();
+		self.e.updateConnect();
 	});
 	//Box
 	svg.append("svg:rect")
@@ -305,6 +307,8 @@ nodeEvent.prototype.creationPopup = function(event)
 		self.e.shape = 1;
 		self.e.create();
 		self.e.redraw();
+		self.e.selector.update();
+		self.e.updateConnect();
 	});
 	//Circle
 	svg.append("svg:circle")
@@ -320,6 +324,8 @@ nodeEvent.prototype.creationPopup = function(event)
 		self.e.shape = 2;
 		self.e.create();
 		self.e.redraw();
+		self.e.selector.update();
+		self.e.updateConnect();
 	});
 	//Set
 	var m = 5, w = 7, h = 20, s = 10;
