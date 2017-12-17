@@ -54,9 +54,10 @@ graphEvent.zoom = function(graph) {
     //Added to catch the offset of a TimeBar translate
     x = g.main.node().transform.baseVal.getItem(0).matrix.e;
 
-    if (d3.event.which == 3 && d3.event.target.tagName == 'svg'){
+    if (d3.event.which == 3 && (d3.event.target.tagName == 'svg' || d3.event.target.attributes.class.value == 'grid')){
       Interface.padding = true;
       document.body.style.cursor = '-moz-grab';
+
       pan = {
         x0: x - d3.event.clientX,
         y0: y - d3.event.clientY,
@@ -65,7 +66,7 @@ graphEvent.zoom = function(graph) {
         index: i
       };
     }
-    else if (d3.event.target.tagName == 'svg'){
+    else if (d3.event.target.tagName == 'svg' || d3.event.target.attributes.class.value == 'grid'){
       g.hideHelpers();
       d3.event.e == null;
       Interface.get().updateProperties(d3.event);
@@ -95,6 +96,9 @@ graphEvent.zoom = function(graph) {
       }
       x = d3.event.clientX + pan.x0;
       y = d3.event.clientY + pan.y0;
+      if (g.snapToGrid){
+        [x, y] = g.snap([x,y]);
+      }
       dispatch.call(pan.target, pan.data, pan.index);
     }
     else if (g.svg.select(".graph-selector").attr('visibility') == 'visible'){
@@ -204,12 +208,14 @@ graphEvent.zoom = function(graph) {
     }
     if (z <= -1.5 && !hideLabels){
       g.svg.selectAll('foreignObject').each(function() {$(this).attr("visibility", "hidden");});
+      g.svg.selectAll('.grid').each(function() {$(this).attr("visibility", "hidden");});
       //g.svg.selectAll('path').each(function() {$(this).attr("shape-rendering", "crispEdges");});
       //g.svg.selectAll('image').each(function() {$(this).attr("image-rendering", "optimize-speed");});
       hideLabels = true;
     }
     else if (z >= -1.5 && hideLabels){
       g.svg.selectAll('foreignObject').each(function() {$(this).attr("visibility", "visible");});
+      g.svg.selectAll('.grid').each(function() {$(this).attr("visibility", "visible");});
       //g.svg.selectAll('path').each(function() {$(this).attr("shape-rendering", "geometric-precision");});
       //g.svg.selectAll('image').each(function() {$(this).attr("image-rendering", "optimize-quality");});
       hideLabels = false;

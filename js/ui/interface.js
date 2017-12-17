@@ -281,44 +281,6 @@ Interface.prototype.setKeyEvents = function()
 		$("#showTimebar").attr('checked', false);
 		$("#showTimebar").button();
 
-		//Handle SVG Zooming: with viewBox, currentScale has no effect
-		// var zoom = function(type){
-		// var g = Interface.get().currentGraph;
-		// var s = g.svg;
-		// var w = s.attr('width');
-		// var h = s.attr('height');
-		// var scale = g.scale();
-		// if(type == 'reset'){
-		// //Find ZoomFactor to display all 'g.objectview_object' elements
-		// var maxX = 0;
-		// var maxY = 0;
-		// $.each(g.nodes, function() {
-		// var bb = this.bBox();
-		// if (this.x > maxX){ maxX = this.x+bb.width;}
-		// if (this.y > maxY){ maxY = this.y+bb.height;}
-		// if (maxX/w > maxY/h) {scale = maxX/w;}
-		// else {scale = maxY/h;}
-		// });
-		// }
-		// else if (type == 'in'){
-		// scale *= 1.1;
-		// }
-		// else if (type == 'out'){
-		// scale /= 1.1;
-		// }
-		// g.scale(scale);
-		// };
-
-		// var zoomDiv = $('<div class="visualist_zoom" style="float:right;">');
-		// var zoomIn = $('<a class="toolbar_tool" href="#zoomIn"><span class="ui-icon ui-icon-zoomin inline_icon"></span></a>');
-		// zoomIn.button().bind('click', function(){zoom('in');});
-		// var zoomReset = $('<a class="toolbar_tool" href="#zoomFit"><span class="ui-icon ui-icon-home inline_icon"></span></a>');
-		// zoomReset.button().bind('click', function(){zoom('reset');});
-		// var zoomOut = $('<a class="toolbar_tool" href="#zoomOut"><span class="ui-icon ui-icon-zoomout inline_icon"></span></a>');
-		// zoomOut.button().bind('click', function(){zoom('out');});
-		// zoomDiv.append(zoomIn).append(zoomReset).append(zoomOut);
-		// $('.ui-tabs-nav').append(zoomDiv);
-
 		// LEFT PANEL
 		//IconSelector Panel
 		this.createIconSelector();
@@ -326,10 +288,8 @@ Interface.prototype.setKeyEvents = function()
 		// RIGHT PANEL
 		var acc = $('<div id="west-accordion"></div>');
 		// History Panel
-		var histDiv = $('<div>');
-		var $historyHeader = $('<h3 id="west-history-header"><a href="#">History</a></h3>');
-		histDiv.append($historyHeader);
-		var $history = $('<div style=" min-height: 200px;"><table class="visualist-history" style="display:block;"></table></div>');
+		var historyHeader = $('<h3 id="west-history-header">History</h3>');
+		var history = $('<div style="min-height: 200px;"><table class="visualist-history" style="display:block;"></table></div>');
 
 		var undo = $('<a class="toolbar_tool" href="#undo"><span class="ui-icon ui-icon-arrowreturnthick-1-w inline_icon"></span>&nbsp;&nbsp;</a>')
 		.button().click(function(e) {
@@ -349,37 +309,17 @@ Interface.prototype.setKeyEvents = function()
 			Interface.get().updateHistory();
 		});
 
-		$history.prepend(redo).prepend(undo);
-		histDiv.append($history);
-		acc.append(histDiv);
+		history.prepend(redo).prepend(undo);
 
+		acc.append(historyHeader);
+		acc.append(history);
 		// Properties Panel
-		acc.append('<div><h3><a href="#">Properties</a></h3><div class="visualist-properties"></div></div>');
+		acc.append('<h3>Properties</h3><div class="visualist-properties"></div>');
 
-		var stopAcc = false;
-		acc.find('h3').click(function( event ) {
-			if ( stopAcc ) {
-				event.stopImmediatePropagation();
-				event.preventDefault();
-				stopAcc = false;
-			}
-			else{
-				if ($(this).attr('id') == 'west-history-header'){
-					Interface.get().updateHistory(true);
-				}
-			}
-		});
 		acc.accordion({
-			header: "> div > h3",
-			collapsible: true,
+			heightStyle: "fill",
+			collapsible: false,
 			fillSpace: true,
-		})
-		.sortable({
-			axis: "y",
-			handle: "h3",
-			stop: function() {
-				stopAcc = true;
-			}
 		});
 		$('.ui-layout-east').append(acc);
 		$('.ui-layout-south').remove();
@@ -411,7 +351,6 @@ Interface.prototype.setKeyEvents = function()
 	*/
 	Interface.prototype.updateProperties = function(event)
 	{
-
 		var div = $('.visualist-properties');
 		if(!div.is(":visible")){
 			return;
@@ -614,7 +553,7 @@ Interface.prototype.setKeyEvents = function()
 						var g = Interface.get().currentGraph;
 						var context = g.svg;
 						$el = $(el, context);
-						if ($el.attr('class') == 'svg-droppable'){
+						if ($el.attr('class') == 'svg-droppable' || $el.attr('class') == 'grid'){
 							var c = g.pos(ui.offset.left , ui.offset.top);
 							var icon = $(this).find('img').attr('src');
 							g.createNode({x:c[0],y:c[1],icon:icon,shape:Interface.entityType

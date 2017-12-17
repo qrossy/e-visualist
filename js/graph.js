@@ -439,21 +439,21 @@ Graph.prototype.screenToCanvas = function(pos)
 		:
 		[(pos[0] - this.translateX())/this.scale(),
 		(pos[1] - this.translateY())/this.scale()];
-	}
+}
 
-	Graph.prototype.snap = function(pos)
-	{
-		return pos.x ?
-		{x:this.gridSize * Math.round(pos.x / this.gridSize),
-			y:this.gridSize * Math.round(pos.y / this.gridSize)}
-			:
-			[this.gridSize * Math.round(pos[0] / this.gridSize),
-			this.gridSize * Math.round(pos[1] / this.gridSize)];
-		}
+Graph.prototype.snap = function(pos)
+{
+	return pos.x ?
+	{x:this.gridSize * Math.round(pos.x / this.gridSize),
+		y:this.gridSize * Math.round(pos.y / this.gridSize)}
+		:
+		[this.gridSize * Math.round(pos[0] / this.gridSize),
+		this.gridSize * Math.round(pos[1] / this.gridSize)];
+}
 
-		Graph.prototype.visibleArea = function()
-		{
-			var $g = $('#graph_'+this.id);
-			return [this.screenToCanvas([0, 0]),
-			this.screenToCanvas([$g.width(),$g.height()])];
-		}
+Graph.prototype.visibleArea = function()
+{
+	var $g = $('#graph_'+this.id);
+	return [this.screenToCanvas([0, 0]),
+	this.screenToCanvas([$g.width(),$g.height()])];
+}

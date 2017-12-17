@@ -49,6 +49,7 @@ graphEvent.prototype.down = function(event)
   //Added to catch the offset of a TimeBar translate
   x = this.g.main.node().transform.baseVal.getItem(0).matrix.e;
 
+	log(event.target.tagName);
   if (event.which == 3 && event.target.tagName == 'svg'){
     Interface.padding = true;
     document.body.style.cursor = '-moz-grab';

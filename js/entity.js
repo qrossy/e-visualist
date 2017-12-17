@@ -19,7 +19,7 @@ function Entity(params)
 	if (!params) params = new Object();
 	params.id ? this.id = params.id : this.id = Entity.nextId;
 	this.id > Entity.nextId ? Entity.nextId = (this.id + 1) : false;
-	
+
 	params.connect ? this.connect = params.connect : this.connect = new Object();
 	params.x ? this.x = params.x : this.x = 0;
 	params.y ? this.y = params.y : this.y = 0;
@@ -30,7 +30,7 @@ function Entity(params)
 	params.ctrlDateTime ? this.ctrlDateTime = params.ctrlDateTime : this.ctrlDateTime = 0;
 	params.labels ? this.labels = params.labels : this.labels = null; //[new Label({e:this})]
 	delete params;
-	
+
 	this.getMainData = function()
 	{
 		return {
@@ -46,7 +46,7 @@ function Entity(params)
 			labels : this.labelInfo(),			// List of textLabels
 			};
 	}
-	
+
 	this.setData = function(data, g)
 	{
 		this.g = g ? g : this.g;
@@ -68,7 +68,7 @@ function Entity(params)
 			}
 		}
 	}
-    
+
 	this.labelInfo = function()
 	{
 		if (!this.labels){
@@ -80,13 +80,13 @@ function Entity(params)
 		}
 		return infos;
 	}
-	
+
 	this.addConnect = function(entity)
 	{
 		this.connect[entity.id] = entity;
 		entity.connect[this.id] = this;
 	}
-	
+
 	this.removeConnect = function(entity)
 	{
 		delete this.connect[entity.id];
@@ -101,7 +101,7 @@ function Entity(params)
 			this.connect[id].redraw();
 		}
 	}
-	
+
 	this.connectCount = function()
 	{
 		return Object.keys(this.connect).length;
@@ -144,12 +144,12 @@ function Entity(params)
 	{
 		return {x:this.x, y:this.y};
 	}
-	
+
 	this.hash = function()
 	{
 		return Entity.hash(this.connect);
 	}
-	
+
 	this.addToTimebar = function()
 	{
 		var evt = new Timeline.DefaultEventSource.Event({
@@ -170,14 +170,14 @@ function Entity(params)
 			this.redraw();
 		}
 	}
-	
+
 	this.redrawLabels = function()
 	{
 		for (var i in this.labels){
 			this.labels[i].redraw();
 		}
 	}
-	
+
 	this.createLabels = function()
 	{
 		for (var i in this.labels){
@@ -198,5 +198,3 @@ Entity.hash = function(nodes)
 	for(var id in a){hash += 'e'+a[id]}
 	return hash;
 }
-
-
