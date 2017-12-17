@@ -28,7 +28,7 @@ function Link(params)
 
 	this.getData = function()
 	{
-		var data = this.getMainData();
+		var data = this.getMainData();  // inheritance from entity.js
 		data.width = this.width;				// Link's width (Number)
 		data.space = this.space;				// orthogonal offset (if nb links between connected > 1)
 		data.arrow = this.arrow;				// null if none or id of entity (if this.id: bidirectional)

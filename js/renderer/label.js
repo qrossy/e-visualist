@@ -159,15 +159,15 @@ Label.prototype.textPopup = function(event)
 	.css("border", "0px")
 	.css("z-index", 3000)
 	.css("position", "relative")
-	.css("width", 600)
+	.css("width", 500)
 	.html("");
 
-	$(div).append('<div id="visualist_popup_pos" style="position:absolute;left:-100px;border:1px solid #CCCCCC;border-right-width: 0px;">');
+	$(div).append('<div id="visualist_popup_pos" style="position:absolute;left:-70px;border:1px solid #CCCCCC;border-right-width: 0px;">');
 	var self = this;
 	var svg = d3.select("#visualist_popup_pos")
 	.append("svg:svg")
-	.attr("width", 100)
-	.attr("height", 175);
+	.attr("width", 70)
+	.attr("height", 195);
 	if (this.e.type == 0)
 	{
 		svg.append("svg:text")
@@ -298,16 +298,20 @@ Label.prototype.textPopup = function(event)
 
 		// General options
 		selector: "textarea",
+		// plugins: [
+		// 	"advlist autolink autosave link image lists charmap print preview hr anchor pagebreak spellchecker",
+		// 	"searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking",
+		// 	"table contextmenu directionality emoticons template textcolor paste fullpage textcolor"
+		// ],
+
 		plugins: [
-			"advlist autolink autosave link image lists charmap print preview hr anchor pagebreak spellchecker",
+			"advlist autolink autosave link image lists charmap hr anchor pagebreak",
 			"searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking",
-			"table contextmenu directionality emoticons template textcolor paste fullpage textcolor"
+			"table contextmenu directionality textcolor paste fullpage textcolor"
 		],
 
-		toolbar1: "newdocument fullpage | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | styleselect formatselect fontselect fontsizeselect",
-		toolbar2: "cut copy paste | searchreplace | bullist numlist | outdent indent blockquote | undo redo | link unlink anchor image media code | inserttime preview | forecolor backcolor",
-		toolbar3: "table | hr removeformat | subscript superscript | charmap emoticons | print fullscreen | ltr rtl | spellchecker | visualchars visualblocks nonbreaking template pagebreak restoredraft",
-
+		toolbar1: "bold italic underline strikethrough subscript superscript | forecolor backcolor fontselect fontsizeselect",
+		toolbar2: "alignleft aligncenter alignright alignjustify | cut copy paste | bullist numlist | inserttime link unlink code | undo redo removeformat",
 		menubar: false,
 		toolbar_items_size: 'small',
 
@@ -328,7 +332,8 @@ Label.prototype.textPopup = function(event)
 		onchange_callback : onChangeContent,
 		setup : function(ed) {
 			ed.on('change', onChangeContent);
-		}
+			ed.on('keydown', onChangeContent);
+		},
 	});
 
 	$(div).show();
