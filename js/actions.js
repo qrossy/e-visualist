@@ -380,8 +380,8 @@ Action.change = function ChangeProperties(params, undo)
 {
 	var oldData = params.e.getData();
 	params.e.setData(params.data);
+	params.e.create();
 	params.e.redraw();
-	params.e.redrawLabels();
 	params.e.updateConnect();
 	params.data = oldData;
 }

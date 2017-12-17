@@ -36,8 +36,6 @@ graphEvent.zoom = function(graph) {
       var entity = g.get(Interface.modifiedEntity.id);
       var data = entity.getData();
       entity.setData(Interface.modifiedEntity);
-      entity.redraw();
-      entity.redrawLabels();
       g.ctrl.addAction(Action.change, {e:entity, data:data});
       g.ctrl.run();
       Interface.modifiedEntity = null;
@@ -126,7 +124,7 @@ graphEvent.zoom = function(graph) {
     }
     prevPos = newPos;
   }
-  
+
   function mouseup() {
     if (verbose) log('Graph Up '+g.id);
     if (pan) {

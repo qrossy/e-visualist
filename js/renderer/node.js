@@ -23,16 +23,15 @@ function Node(params)
 
 	this.getData = function()
 	{
-		var data = this.getMainData();
-
-		data.shape = this.shape;					// 0 = Icon, 1 = Box, 2 = Circle
-		data.icon = this.icon;						// href to iconImage
-		data.w = this.w;							// Width
-		data.h = this.h;							// Height
-		data.theme = this.theme;					// Object: {draw:Boolean, mostLeft:Boolean, mostRight:Boolean} (draw Horizontal Line)
-		data.set = this.set;						// Boolean: true if is a Set (draw Braces)
+		var data = this.getMainData();					// shared properties defined in entity.js
+		data.shape = this.shape;								// 0 = Icon, 1 = Box, 2 = Circle
+		data.icon = this.icon;									// href to iconImage
+		data.w = this.w;												// Width
+		data.h = this.h;												// Height
+		data.theme = this.theme;								// Object: {draw:Boolean, mostLeft:Boolean, mostRight:Boolean} (draw Horizontal Line)
+		data.set = this.set;										// Boolean: true if is a Set (draw Braces)
 		data.set_margin = this.set_margin;			// Margin between the Braces and the node
-		data.set_width = this.set_width;			// Width of the Braces
+		data.set_width = this.set_width;				// Width of the Braces
 		return data;
 	}
 }
@@ -41,6 +40,7 @@ Node.prototype.redraw = function()
 {
 	this.svg.attr("transform", "translate("+this.x+","+this.y+")");
 	if (this.shape == 0){
+		this.w < this.h ? this.h = this.w : this.w = this.h;
 		this.svg.select("image")
 			.attr("xlink:href", this.icon)
 			.attr("width", this.w+"px")
@@ -55,6 +55,7 @@ Node.prototype.redraw = function()
 			.attr("stroke", this.color);
 	}
 	else if (this.shape == 2){
+		this.w < this.h ? this.h = this.w : this.w = this.h;
 		var r = this.w < this.h ? this.w/2: this.h/2;
 		this.svg.select("circle")
 			.attr("cx", r)
@@ -93,9 +94,8 @@ Node.prototype.redraw = function()
 			.attr('y2', this.y + this.h/2)
 			.attr("stroke", this.color);
 	}
-	for (var i in this.labels){
-		this.labels[i].redraw();
-	}
+	this.redrawLabels();
+	this.selector.update();
 }
 
 Node.prototype.create = function()
@@ -191,8 +191,9 @@ Node.prototype.bBox = function(mode)
 	else if (this.shape == 2){
 		var elm = this.svg.select('circle').node();
 	}
-	if (!elm.getBBox){
-		elm = elm.correspondingUseElement;
+	if (!elm){
+		log(this.svg);
+		return;
 	}
 	var box = elm.getBBox();
 	box.x = this.x ? this.x : 0;

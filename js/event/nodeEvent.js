@@ -282,6 +282,7 @@ nodeEvent.prototype.creationPopup = function(event)
 	.attr("x", 10)
 	.attr("y", 10)
 	.on('click', function() {
+		if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.e.getData();
 		Interface.entityType = 0;
 		self.e.shape = 0;
 		self.e.create();
@@ -299,6 +300,7 @@ nodeEvent.prototype.creationPopup = function(event)
 	.attr("x", 40)
 	.attr("y", 10)
 	.on('click', function() {
+		if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.e.getData();
 		Interface.entityType = 1;
 		self.e.shape = 1;
 		self.e.create();
@@ -313,6 +315,7 @@ nodeEvent.prototype.creationPopup = function(event)
 	.attr("cx", 80)
 	.attr("cy", 22)
 	.on('click', function() {
+		if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.e.getData();
 		Interface.entityType = 2;
 		self.e.shape = 2;
 		self.e.create();
@@ -337,6 +340,7 @@ nodeEvent.prototype.creationPopup = function(event)
 	.attr("x", -10)
 	.attr("y", 0)
 	.on('click', function() {
+		if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.e.getData();
 		self.e.set = self.e.set ? false : true;
 		self.e.create();
 		self.e.redraw();
@@ -368,6 +372,7 @@ nodeEvent.prototype.creationPopup = function(event)
 	.attr("x", 180)
 	.attr("y", 10)
 	.on('click', function() {
+		if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.e.getData();
 		self.e.theme.draw = self.e.theme.draw ? false : true;
 		self.e.create();
 		self.e.redraw();
@@ -412,7 +417,6 @@ nodeEvent.prototype.creationPopup = function(event)
 			self.e.w = ui.value;
 			self.e.redraw();
 			self.e.selector.update();
-			self.e.redrawLabels()
 			self.e.updateConnect();
 		}
 	});
