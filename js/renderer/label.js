@@ -162,7 +162,7 @@ Label.prototype.textPopup = function(event)
 	.css("width", 500)
 	.html("");
 
-	$(div).append('<div id="visualist_popup_pos" style="position:absolute;left:-70px;border:1px solid #CCCCCC;border-right-width: 0px;">');
+	$(div).append('<div id="visualist_popup_pos" style="position:absolute;left:-70px;border:1px solid #AAA;border-right-width: 0px;">');
 	var self = this;
 	var svg = d3.select("#visualist_popup_pos")
 	.append("svg:svg")

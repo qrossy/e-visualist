@@ -199,7 +199,7 @@ Interface.prototype.setKeyEvents = function()
 		Interface.timeBarBandInfos[1].highlight = true;
 		Interface.timebar = Timeline.create(document.getElementById("visualist_timebar"), Interface.timeBarBandInfos);
 
-		this.popupDiv = $('<div class="visualist_popup" id="visualist_popup"></div>');
+		this.popupDiv = $('<div class="visualist_popup" id="visualist_popup"></div>').draggable();
 		$('body').append(this.popupDiv);
 
 		//Setup Toolbar

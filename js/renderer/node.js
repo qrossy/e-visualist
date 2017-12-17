@@ -1,4 +1,4 @@
-Node.prototype.toString = function() 
+Node.prototype.toString = function()
 {
 	var ret = "Node";
 	return ret;
@@ -15,16 +15,16 @@ function Node(params)
 	params.theme ? this.theme = params.theme : this.theme = {draw:false, mostLeft:true, mostRight:true};
 	params.set_margin ? this.set_margin = params.set_margin : this.set_margin = 5;
 	params.set_width ? this.set_width = params.set_width : this.set_width = 15;
-	
+
 	params.labels = params.labels ? params.labels : [new Label({e:this, text:params.text})];
-	
+
 	this.parent = Entity;
 	this.parent(params);
-	
+
 	this.getData = function()
 	{
 		var data = this.getMainData();
-		
+
 		data.shape = this.shape;					// 0 = Icon, 1 = Box, 2 = Circle
 		data.icon = this.icon;						// href to iconImage
 		data.w = this.w;							// Width
@@ -36,7 +36,7 @@ function Node(params)
 		return data;
 	}
 }
-	
+
 Node.prototype.redraw = function()
 {
 	this.svg.attr("transform", "translate("+this.x+","+this.y+")");
@@ -64,7 +64,7 @@ Node.prototype.redraw = function()
 			.attr("fill-opacity", 0)
 			.attr("stroke", this.color);
 	}
-	
+
 	if (this.set){
 		var m = this.set_margin;
 		var w = this.set_width;
@@ -76,7 +76,7 @@ Node.prototype.redraw = function()
 			.attr('d', path)
 			.attr("stroke", this.color);
 	}
-	
+
 	if (this.theme.draw){
 		var band = Interface.timebar.getBand(0);
 		var minX = this.x + this.w;
@@ -93,6 +93,9 @@ Node.prototype.redraw = function()
 			.attr('y2', this.y + this.h/2)
 			.attr("stroke", this.color);
 	}
+	for (var i in this.labels){
+		this.labels[i].redraw();
+	}
 }
 
 Node.prototype.create = function()
@@ -100,7 +103,7 @@ Node.prototype.create = function()
 	if (this.svg) {this.svg.remove();}
 	this.svg = this.g.svg.select(".nodes").append("svg:g");
 	this.eventHandler = new nodeEvent(this.g, this);
-		
+
 	this.svg
 		.attr("class", "nodeEntity")
 		.attr("id", this.id);
@@ -131,7 +134,7 @@ Node.prototype.create = function()
 			.attr("stroke-width", 2)
 			.attr("r", this.w/2);
 	}
-	
+
 	if (this.set){
 		this.svg.append("svg:path")
 			.attr("class", "set")
@@ -140,7 +143,7 @@ Node.prototype.create = function()
 			.attr("stroke-linecap", "round")
 			.attr("stroke-width", 3);
 	}
-	
+
 	if (this.theme.draw){
 		this.g.svg.select(".themeLines").append("svg:line")
 			.attr("class", "theme"+this.id)
@@ -155,7 +158,7 @@ Node.prototype.create = function()
 	}
 	this.createLabels();
 }
-	
+
 Node.prototype.setBox = function(box)
 {
 	this.x = box.x;
@@ -164,7 +167,7 @@ Node.prototype.setBox = function(box)
 	this.h = box.height;
 }
 
-	
+
 Node.prototype.getCenter = function()
 {
 	var center = new Object();
@@ -194,6 +197,8 @@ Node.prototype.bBox = function(mode)
 	var box = elm.getBBox();
 	box.x = this.x ? this.x : 0;
 	box.y = this.y ? this.y : 0;
+	box.width = this.w;
+	box.height = this.h;
 	if (mode == 'all'){
 		var off = $(elm).offset();
 		var pos = this.g.pos(off.left, off.top);
@@ -204,6 +209,6 @@ Node.prototype.bBox = function(mode)
 		box.x = (this.x - this.set_margin - this.set_width);
 		box.width += (this.set_margin*2 + this.set_width*2);
 	}
-	
+
 	return box;
 }

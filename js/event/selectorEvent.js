@@ -1,4 +1,4 @@
-selectorEvent.prototype.toString = function() 
+selectorEvent.prototype.toString = function()
 {
 	return "SelectorEvent";
 }
@@ -36,10 +36,10 @@ selectorEvent.prototype.down = function(event)
 }
 
 selectorEvent.prototype.move = function(event)
-{	
+{
 	this.newPos = this.g.pos(event.pageX, event.pageY);
 	this.g.hideAlignmentHelper();
-	
+
 	if (this.e.elem.type == 0){
 		if (this.id != 'n' && this.id != 's'){
 			var dx = this.newPos[0]-this.fixedPos[0];
@@ -52,7 +52,7 @@ selectorEvent.prototype.move = function(event)
 				this.e.elem.w = -dx;
 			}
 		}
-		
+
 		if (this.id != 'e' && this.id != 'w'){
 			var dy = this.newPos[1]-this.fixedPos[1];
 			this.e.elem.y = this.fixedPos[1];
@@ -102,7 +102,7 @@ selectorEvent.prototype.move = function(event)
 			var cp = path.node().pathSegList.getItem(index);
 			cp.x += (this.newPos[0] - this.prevPos[0]);
 			cp.y += (this.newPos[1] - this.prevPos[1]);
-			
+
 			var prev = path.node().pathSegList.getItem(index-1);
 			var next = path.node().pathSegList.getItem(index+1);
 			if (Math.abs(prev.x - cp.x) <= 5){
@@ -141,7 +141,7 @@ selectorEvent.prototype.move = function(event)
 					.attr("y2", cp.y + 2)
 					.attr("visibility", "visible");
 			}
-			
+
 			for (var id in links){
 				links[id].redraw();
 			}
@@ -159,10 +159,9 @@ selectorEvent.prototype.up = function(event)
 	Interface.SelectedCorner = null;
 	if (this.e.elem.type == 0){
 		var newBox = this.e.elem.bBox();
-		if (this.e.elem.set){
-			newBox.width -= (2*this.e.elem.set_margin + 2*this.e.elem.set_width);
-		}
-		
+		// if (this.e.elem.set){
+		// 	newBox.width -= (2*this.e.elem.set_margin + 2*this.e.elem.set_width);
+		// }
 		this.e.elem.setBox(this.initialBox);
 		this.g.ctrl.addAction(Action.resize, {e:this.e.elem, box:newBox});
 		this.g.ctrl.run();
@@ -200,7 +199,7 @@ selectorEvent.prototype.up = function(event)
 }
 
 selectorEvent.prototype.over = function(event)
-{		
+{
 
 }
 
