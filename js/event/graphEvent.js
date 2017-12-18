@@ -53,11 +53,12 @@ graphEvent.zoom = function(graph) {
 
     //Added to catch the offset of a TimeBar translate
     x = g.main.node().transform.baseVal.getItem(0).matrix.e;
-
-    if (d3.event.which == 3 && (d3.event.target.tagName == 'svg' || d3.event.target.attributes.class.value == 'grid')){
+    var targetClass = $(d3.event.target).attr('class');
+    var ground = ['svg-droppable', 'grid'];
+    if (!targetClass){ }
+    else if (d3.event.which == 3 && ground.includes(targetClass)){
       Interface.padding = true;
       document.body.style.cursor = '-moz-grab';
-
       pan = {
         x0: x - d3.event.clientX,
         y0: y - d3.event.clientY,
@@ -66,7 +67,7 @@ graphEvent.zoom = function(graph) {
         index: i
       };
     }
-    else if (d3.event.target.tagName == 'svg' || d3.event.target.attributes.class.value == 'grid'){
+    else if (ground.includes(targetClass)){
       g.hideHelpers();
       d3.event.e == null;
       Interface.get().updateProperties(d3.event);

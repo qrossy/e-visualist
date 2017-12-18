@@ -30,11 +30,11 @@ function Link(params)
 	{
 		var data = this.getMainData();  // inheritance from entity.js
 		data.width = this.width;				// Link's width (Number)
-		data.space = this.space;				// orthogonal offset (if nb links between connected > 1)
+		data.space = this.space;				// orthogonal position (if nb links between connected > 1)
 		data.arrow = this.arrow;				// null if none or id of entity (if this.id: bidirectional)
 		data.arrowOthers = this.arrowOthers;	// Arrow on all Entity except the one in this.arrow
 		data.dasharray = this.dasharray;		// Pattern of the line : null, solid, "10, 5", etc..
-		data.ratio = this.ratio;				// Ratio to moveCenter Point from 0 to 1 (0.5 = center)
+		data.ratio = this.ratio;				// Ratio to moveCenter Point of bidirecional link, from 0 to 1 (0.5 = center)
 		data.secondColor = this.secondColor;	// Target to Center color (for bidirectional link)
 		data.distToLink = this.distToLink;		// distance between links (if more than one link between same Nodes)
 		data.distToNode = this.distToNode;		// distance between first ctrlPoint and Node

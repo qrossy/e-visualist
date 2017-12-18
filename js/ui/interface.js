@@ -256,12 +256,12 @@ Interface.prototype.setKeyEvents = function()
 			var size = Interface.get().canvasSize();
 			var data = g.getLayoutInfo();
 			var force = d3.layout.force()
-			.nodes(data.nodes)
-			.links(data.links)
-			.size([size[0], size[1]])
-			.distance(20)
-			.charge(-10000)
-			.gravity(.5);
+				.nodes(data.nodes)
+				.links(data.links)
+				.size([size[0], size[1]])
+				.distance(20)
+				.charge(-10000)
+				.gravity(.5);
 
 			force.on("tick", function(d) {
 				if (d.alpha < 0.06){

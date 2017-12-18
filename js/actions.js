@@ -39,7 +39,7 @@ Action.createNode = function CreateNode(params, undo)
 /**
 * Create Relation
 *
-*@param {{type:String, linked:[Node,..], g:Graph, prop:properties}} params Node params and Graph
+*@param {{type:String, linked:[Node,..], g:Graph, prop:properties}} params Relation params and Graph
 *@param {Boolean} undo
 */
 
@@ -49,16 +49,16 @@ Action.createRelation = function CreateRelation(params, undo)
 		if (!params.e){
 			if (params.type == 'link'){
 				var entity = new Link(params.prop);
-				if (params.linked.length == 2){
-					entity.source = typeof(params.linked[0]) == 'number' ? params.g.get(params.linked[0]) : params.linked[0];
-					entity.target = typeof(params.linked[1]) == 'number' ? params.g.get(params.linked[1]) : params.linked[1];
-				}
 			}
 			else if (params.type == 'box'){
 				var entity = new Box(params.prop);
 			}
 			else if (params.type == 'polygon'){
 				var entity = new Polygon(params.prop);
+			}
+			if (params.linked.length == 2){
+				entity.source = typeof(params.linked[0]) == 'number' ? params.g.get(params.linked[0]) : params.linked[0];
+				entity.target = typeof(params.linked[1]) == 'number' ? params.g.get(params.linked[1]) : params.linked[1];
 			}
 			params.e = entity;
 		}
@@ -255,8 +255,15 @@ Action.removeNode = function RemoveNode(params, undo)
 			for (var id in c.connect){
 				id != params.e.id ? c.connect[id].connect[c.id] = c : false;
 			}
-			c.create();
-			c.redraw();
+			try{
+				//fail if connected node is absent (if batch delete)
+				c.create();
+				c.redraw();
+			}
+			catch(err){
+				//nothing to do, relation will be created by last connected node
+				continue;
+			}
 		}
 	}
 }

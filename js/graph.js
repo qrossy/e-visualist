@@ -184,6 +184,31 @@ Graph.prototype.getNodes = function(box)
 	return nodes;
 }
 
+// Return a list of edges {source:e1, target:e2} from a multi node relation
+Graph.prototype.getClique = function(entity)
+{
+	var clique = [];
+	var hashes = [];
+	var linked = entity.connectRefs();
+	for (var i in linked){
+			for (var j in linked){
+				e1 = linked[i];
+				e2 = linked[j];
+				if (e1 != e2){
+					var hash = Entity.hash([this.get(e1),this.get(e2)]);
+					if (hashes.includes(hash)){
+						continue;
+					}
+					else{
+						hashes.push(hash);
+						clique.push({source:e1, target:e2});
+				}
+				}
+		}
+	}
+	return clique;
+}
+
 Graph.prototype.getLayoutInfo = function()
 {
 	//TODO: if no change since last call
@@ -194,17 +219,14 @@ Graph.prototype.getLayoutInfo = function()
 		if (e.type == 0){
 			nodes.push(e);
 		}
-		else if (e.connectCount() > 2 && e.type != 0 && e.space == 0){
-			if (e.type == 1){
-				nodes.push(e);
+		else{
+			if (e.connectCount() > 2){
+				var clique = this.getClique(e);
+				clique.forEach(function(v) {links.push(v)}, links);
 			}
-			var linked = e.connectRefs();
-			for (var l in linked){
-				links.push({source:e, target:this.get(linked[l])});
+			else if (e.connectCount() == 2){
+				links.push(e);
 			}
-		}
-		else if (e.connectCount() == 2 && e.space == 0){
-			links.push(e);
 		}
 	}
 	return {nodes:nodes, links:links};
