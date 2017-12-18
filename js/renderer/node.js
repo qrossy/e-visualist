@@ -165,6 +165,7 @@ Node.prototype.setBox = function(box)
 	this.y = box.y;
 	this.w = box.width;
 	this.h = box.height;
+	this.redraw();
 }
 
 
@@ -198,8 +199,6 @@ Node.prototype.bBox = function(mode)
 	var box = elm.getBBox();
 	box.x = this.x ? this.x : 0;
 	box.y = this.y ? this.y : 0;
-	box.width = this.w;
-	box.height = this.h;
 	if (mode == 'all'){
 		var off = $(elm).offset();
 		var pos = this.g.pos(off.left, off.top);
