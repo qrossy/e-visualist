@@ -103,7 +103,6 @@ function Interface()
 Interface.prototype.setKeyEvents = function()
 {
 	$(document).keydown(function(event) {
-		event.preventDefault();
 		if(event.keyCode == 18){ // click Alt to add link !
 			if (!Interface.addingLink){
 				Interface.addingLink = new Object();
@@ -113,8 +112,6 @@ Interface.prototype.setKeyEvents = function()
 		}
 	});
 	$(document).keyup(function(event) {
-		event.preventDefault();
-		event.stopPropagation();
 		if(event.keyCode == 8 || event.keyCode == 46){
 			var g = Interface.get().currentGraph;
 			if (Interface.selectedCorner){
@@ -142,9 +139,9 @@ Interface.prototype.setKeyEvents = function()
 		});
 
 		$(window).keyup(function(event) {
-			event.preventDefault();
-			event.stopPropagation();
 			if(event.keyCode == 18){
+				// event.preventDefault();
+				// event.stopPropagation();
 				Interface.addingLink = false;
 			}
 		});
@@ -152,7 +149,6 @@ Interface.prototype.setKeyEvents = function()
 
 	Interface.prototype.init = function()
 	{
-		this.setKeyEvents();
 		//Add TabManager for Adding Graphs
 		var mainTabs = $('<div class="center-tabs"><ul></ul></div>');
 		$('.ui-layout-center').append(mainTabs);
@@ -256,12 +252,12 @@ Interface.prototype.setKeyEvents = function()
 			var size = Interface.get().canvasSize();
 			var data = g.getLayoutInfo();
 			var force = d3.layout.force()
-				.nodes(data.nodes)
-				.links(data.links)
-				.size([size[0], size[1]])
-				.distance(20)
-				.charge(-10000)
-				.gravity(.5);
+			.nodes(data.nodes)
+			.links(data.links)
+			.size([size[0], size[1]])
+			.distance(20)
+			.charge(-10000)
+			.gravity(.5);
 
 			force.on("tick", function(d) {
 				if (d.alpha < 0.06){
@@ -323,6 +319,8 @@ Interface.prototype.setKeyEvents = function()
 		});
 		$('.ui-layout-east').append(acc);
 		$('.ui-layout-south').remove();
+
+		this.setKeyEvents();
 	}
 
 	/**
@@ -360,7 +358,7 @@ Interface.prototype.setKeyEvents = function()
 		div.html('');
 		var entity = event.e;
 		if (!entity){
-			div.append('<input type="checkbox" id="gridVisible" /><label for="gridVisible">Show Grid</label>');
+			div.append('<input type="checkbox" id="gridVisible" /><label for="gridVisible">Show grid</label>');
 			$("#gridVisible").click(function() {
 				if(g.gridVisible){
 					g.gridVisible = false;
@@ -372,14 +370,31 @@ Interface.prototype.setKeyEvents = function()
 				}
 			});
 			if (g.gridVisible) $("#gridVisible").attr('checked', true);
-			$("#gridVisible").button();
-
-			div.append('<input type="checkbox" id="snapToGrid" /><label for="snapToGrid">Snap to Grid</label>');
+			// $("#gridVisible").button();
+			div.append('<br/>');
+			div.append('<input type="checkbox" id="snapToGrid" /><label for="snapToGrid">Snap to grid</label>');
 			$("#snapToGrid").click(function(e) {
 				g.snapToGrid ? g.snapToGrid = false : g.snapToGrid = true;
 			});
 			if (g.snapToGrid) $("#snapToGrid").attr('checked', true);
-			$("#snapToGrid").button();
+			// $("#snapToGrid").button();
+			div.append('<br/>');
+			var gridSliderDiv = $('<div style="margin-left:5px;margin-top:5px;">');
+			gridSliderDiv.append('<div id="slider-gridSize" style="width:95%;margin-left:3px;"></div>');
+			div.append(gridSliderDiv);
+			$('#slider-gridSize').slider({
+				orientation: "horizontal",
+				range: "min",
+				min: 5,
+				max: 50,
+				step: 5,
+				value: self.g.gridSize,
+				slide: function( event, ui ) {
+					self.g.gridSize = ui.value;
+					// self.g.onZoom();
+				}
+			});
+			$( "#slider-gridSize" ).slider( "value", self.g.gridSize);
 		}
 		else if (entity.type == 0){
 			var eType = $('<div class="visualist_node_type" style="margin-bottom:5px;">')

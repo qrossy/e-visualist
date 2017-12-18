@@ -9,7 +9,7 @@ function visEvent(graph, elem)
 	this.g = graph;
 	this.e = elem;
 	this.verbose = false;
-
+	this.stopProp = true;
 
 	this.getObjectAt = function(event, onlyOther)
 	{
@@ -49,6 +49,7 @@ function visEvent(graph, elem)
 			return;
 		}
 		self.move(event);
+		if (self.stopProp){event.stopPropagation();}
 	}
 
 	var onMouseUp = function(event)
@@ -56,7 +57,7 @@ function visEvent(graph, elem)
 		if (self.verbose) log(self.toString()+' Up');
 		toggleDrag(false);
 		self.up(event);
-
+		if (self.stopProp){event.stopPropagation();}
 	}
 
 	var onMouseDown = function(event)
@@ -79,6 +80,7 @@ function visEvent(graph, elem)
 		self.down(event);
 
 		toggleDrag(true);
+		if (self.stopProp){event.stopPropagation();}
 	}
 
 	var onMouseOver = function(event)
@@ -89,6 +91,7 @@ function visEvent(graph, elem)
 		}
 		event.preventDefault();
 		self.over(event);
+		if (self.stopProp){event.stopPropagation();}
 	}
 
 	var onMouseOut = function(event)
@@ -99,16 +102,40 @@ function visEvent(graph, elem)
 		}
 		event.preventDefault();
 		self.out(event);
+		if (self.stopProp){event.stopPropagation();}
 	}
+
+	// var onKeyDown = function(event)
+	// {
+	// 	if (self.verbose) log(self.toString()+' Key '+event.keyCode+' down');
+	// 	if (!event){
+	// 		event = d3.event;
+	// 	}
+	// 	event.preventDefault();
+	// 	self.keydown(event);
+	// }
+  //
+	// var onKeyUp = function(event)
+	// {
+	// 	if (self.verbose) log(self.toString()+' Key '+event.keyCode+' up');
+	// 	if (!event){
+	// 		event = d3.event;
+	// 	}
+	// 	event.preventDefault();
+	// 	self.keyup(event);
+	// }
 
 	this.e.svg
 	.on('mouseover', onMouseOver)
 	.on('mouseout', onMouseOut)
 	.on('mousedown', onMouseDown)
+	// .on('keydown', onKeyDown)
+	// .on('keyup', onKeyUp)
 	.on('contextmenu', function() {
 		d3.event.preventDefault();
 	});
 }
+
 // Child methods
 // visEvent.prototype.down = function(event)
 // {

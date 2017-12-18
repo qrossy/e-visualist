@@ -216,7 +216,7 @@ Label.prototype.textPopup = function(event)
 	.attr("height", 80);
 	var wDiv = $('<div class="visualist_textwidthSelector">');
 	wDiv.append('<div class="vslider" id="slider-vertical" style="height:50px;margin-left: 6px;"></div>');
-	wDiv.append('<input type="text" id="width" style="width:40px;"/>');
+	wDiv.append('<input type="text" id="label-width" style="width:40px;"/>');
 	$(widthSvg.node()).append(wDiv);
 	$("#slider-vertical").slider({
 		orientation: "vertical",
@@ -225,7 +225,7 @@ Label.prototype.textPopup = function(event)
 		max: 300,
 		value: self.textWidth,
 		slide: function( event, ui ) {
-			$( "#width" ).val( ui.value );
+			$( "#label-width" ).val( ui.value );
 			self.textWidth = ui.value;
 			if (self.e.type == 0){
 				self.x = self.e.w/2 - self.textWidth/2;
@@ -238,7 +238,7 @@ Label.prototype.textPopup = function(event)
 			Interface.modifiedLabel = self;
 		}
 	});
-	$( "#width" ).val( $( "#slider-vertical" ).slider( "value" ));
+	$( "#label-width" ).val( $( "#slider-vertical" ).slider( "value" ));
 
 	svg.append("svg:text")
 	.attr("x", 10)
@@ -282,7 +282,7 @@ Label.prototype.textPopup = function(event)
 				w > max ? max = w : false;
 			});
 			self.textWidth = parseInt(max*1.2);
-			$( "#width" ).val(self.textWidth);
+			$( "#label-width" ).val(self.textWidth);
 			$( "#slider-vertical" ).slider( "value", self.textWidth);
 		}
 		self.setHtml(txt);

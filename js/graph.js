@@ -114,38 +114,7 @@ Graph.prototype.init = function()
 	.attr("ry", 5)
 	.attr("stroke", '#000000');
 
-	var self = this;
-
-	var onZoom = function() {
-		self.main.node().transform.baseVal.getItem(0).matrix.e = d3.event.translate[0];
-		self.main.node().transform.baseVal.getItem(0).matrix.f = d3.event.translate[1];
-		if (d3.event.pan){
-			return;
-		}
-
-		self.main.node().transform.baseVal.getItem(0).matrix.a = d3.event.scale;
-		self.main.node().transform.baseVal.getItem(0).matrix.d = d3.event.scale;
-		self.svg.select("#gridPattern").attr("width", self.gridSize*d3.event.scale);
-		self.svg.select("#gridPattern").attr("height", self.gridSize*d3.event.scale);
-
-		if ($("#visualist_timebar").length == 0 || $("#visualist_timebar").is(':hidden')){
-			return;
-		}
-
-		Interface.padding = true; //Prevent TimeBar to update Graph during ScrollEvent
-		var staticDate = Interface.timebar.getBand(0)._ether.pixelOffsetToDate(d3.event.x);
-		Interface.timeBarParams.intervalPixels = Interface.timeBarParams.fixInterval*d3.event.scale;
-		Interface.UpdateTimebar(self.timeZones);
-		var newStaticDatePos = Interface.timebar.getBand(0)._ether.dateToPixelOffset(staticDate);
-		Interface.timebar.getBand(0)._moveEther(d3.event.x - newStaticDatePos);
-		Interface.padding = false;
-	}
-	// this.svg.eventHandler = new graphEvent(this);
-	this.svg.call(graphEvent.zoom(this)
-	.on("zoom", onZoom));
-	this.svg.on('contextmenu', function() {
-		d3.event.preventDefault();
-	});
+	this.svg.eventHandler = new graphEvent(this);
 }
 
 Graph.prototype.translateX = function(val)

@@ -373,6 +373,7 @@ Action.resize = function Resize(params, undo)
 	var oldBox = params.e.bBox();
 	params.e.setBox(params.box);
 	params.e.redraw();
+	params.e.updateConnect();
 	params.box = oldBox;
 }
 

@@ -101,16 +101,17 @@
 			$('#graph_'+g.id).data('data', g);
 			g.init();
 			var actions = new Array();
-			var n = 5;
+			var n = 10;
 			for (var i = 0; i < n; i++){
 				actions.push([Action.createNode, {e:{x:Math.random()*500,y:Math.random()*200,icon:'img/person/male.png',shape:0}, g:g}]);
 			}
+			// Math.floor(Math.random()*3)
 			var linkType = {0:'link', 1:'polygon',2:'box'};
 			for (var i = 0; i < n; i++){
 				var e1 = Math.floor(Math.random()*n)+1;
 				var e2 = Math.floor(Math.random()*n)+1;
 				if (e1 != e2){
-					actions.push([Action.createRelation, {type:linkType[Math.floor(Math.random()*3)], linked:[e1, e2], prop:{}, g:g}]);
+					actions.push([Action.createRelation, {type:linkType[0], linked:[e1, e2], prop:{}, g:g}]);
 				}
 			}
 			g.ctrl.addBatch(actions, 'RandomGraph');

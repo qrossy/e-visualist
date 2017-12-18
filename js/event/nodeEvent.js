@@ -406,7 +406,7 @@ nodeEvent.prototype.creationPopup = function(event)
 	div.append($('<div id="FirstColorPicker" style="text-align:center;">').append(rColor));
 
 	var wDiv = $('<div style="margin-left:5px;margin-top:5px;">');
-	wDiv.append('<input type="text" id="width" size="1" style="float:right;margin-top:-3px;"/>');
+	wDiv.append('<input type="text" id="node-width" size="1" style="float:right;margin-top:-3px;"/>');
 	wDiv.append('<div id="slider-width" style="width:185px;margin-left:3px;"></div>');
 	div.append(wDiv);
 	$('#slider-width').slider({
@@ -418,7 +418,7 @@ nodeEvent.prototype.creationPopup = function(event)
 		value: self.e.w,
 		slide: function( event, ui ) {
 			if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.e.getData();
-			$( "#width" ).val( ui.value );
+			$( "#node-width" ).val( ui.value );
 			self.e.h = ui.value*self.e.h / self.e.w;
 			self.e.w = ui.value;
 			self.e.redraw();
@@ -427,7 +427,7 @@ nodeEvent.prototype.creationPopup = function(event)
 		}
 	});
 
-	$( "#width" ).val( $( "#slider-width" ).slider( "value" ));
+	$( "#node-width" ).val( $( "#slider-width" ).slider( "value" ));
 
 	$(div).show();
 }
