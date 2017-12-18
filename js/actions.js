@@ -106,7 +106,7 @@ Action.createCorner = function CreateCorner(params, undo)
 	else{
 		var path = links[0].svg.select(".e"+params.id);
 	}
-	var segments = path.node().pathSegList;
+	var segments = path.node().getPathData();
 	if (!undo){
 		var prev = segments.getItem(params.index-1);
 		var next = segments.getItem(params.index);
@@ -120,6 +120,7 @@ Action.createCorner = function CreateCorner(params, undo)
 	else{
 		segments.removeItem(params.index);
 	}
+	params.e.setMainPath(segments.path);
 	for (var id in links){
 		links[id].redraw();
 	}
@@ -152,17 +153,19 @@ Action.removeCorner = function RemoveCorner(params, undo)
 	else{
 		var path = links[0].svg.select("."+params.id);
 	}
-	var segments = path.node().pathSegList;
+	var segments = path.node().getPathData();
 	if (!undo){
 		var p = segments.getItem(params.index);
 		params.point = {x: p.x, y: p.y};
 		segments.removeItem(params.index);
+		params.e.setMainPath(segments.path);
 	}
 	else{
 		path.attr('d', path.attr('d') + " L"+params.point.x+","+params.point.y);
 		var corner = segments.getItem(segments.numberOfItems-1);
 		segments.insertItemBefore(corner, params.index);
 		segments.removeItem(segments.numberOfItems-1);
+		params.e.setMainPath(segments.path);
 	}
 	for (var id in links){
 		links[id].redraw();

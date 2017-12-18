@@ -180,23 +180,25 @@ Node.prototype.getCenter = function()
 
 Node.prototype.bBox = function(mode)
 {
+	var elm;
 	if (mode == 'all'){
-		var elm = this.svg.node();
+		elm = this.svg.node();
 	}
 	else if (this.shape == 0){
-		var elm = this.svg.select('image').node();
+		elm = this.svg.select('image').node();
 	}
 	else if (this.shape == 1){
-		var elm = this.svg.select('rect').node();
+		elm = this.svg.select('rect').node();
 	}
 	else if (this.shape == 2){
-		var elm = this.svg.select('circle').node();
+		elm = this.svg.select('circle').node();
 	}
 	if (!elm){
 		log(this.svg);
 		return;
 	}
 	var box = elm.getBBox();
+	log(box);
 	box.x = this.x ? this.x : 0;
 	box.y = this.y ? this.y : 0;
 	if (mode == 'all'){

@@ -1,7 +1,7 @@
 linkEvent.prototype.toString = function()
 {
 	return "LinkEvent";
-}
+};
 
 function linkEvent(graph, link)
 {
@@ -25,19 +25,21 @@ linkEvent.prototype.down = function(event)
 	this.g.zonesByEntity ? zones = this.g.zonesByEntity[this.e.id] : false;
 
 	if (Interface.addingCorner){
+		var id = null;
+		var segments = null;
 		var point = this.g.pos(event.pageX, event.pageY);
 		if (this.e.connectCount() == 2 && this.e.arrow == this.e.id){
-			var id = null;
-			var segments = this.e.getMainPath().node().pathSegList;
+			segments = this.e.getMainPath().node().getPathData();
 		}
 		else{
-			var id = $(event.target).attr('class').split('e')[1];
-			var segments = this.e.svg.select(".e"+id).node().pathSegList;
+			id = $(event.target).attr('class').split('e')[1];
+			segments = this.e.svg.select(".e"+id).node().getPathData();
 		}
 		var index = Link.getPathIndex(segments, point);
 		var prev = segments.getItem(index-1);
 		var next = segments.getItem(index);
 		var ratio = Link.vector(prev, point).norm() / Link.vector(prev, next).norm();
+		this.e.setMainPath(segments.path);
 		this.g.ctrl.addAction(Action.createCorner, {g: this.g, e:this.e, ratio:ratio, index:index, id:id});
 		this.g.ctrl.run();
 		Interface.addingCorner = false;
@@ -46,7 +48,7 @@ linkEvent.prototype.down = function(event)
 		this.e.selector.update();
 	}
 	this.g.hideHelpers();
-}
+};
 
 linkEvent.prototype.move = function(event)
 {
@@ -124,7 +126,7 @@ linkEvent.prototype.move = function(event)
 	}
 
 	this.prevPos = this.newPos;
-}
+};
 
 linkEvent.prototype.up = function(event)
 {
@@ -143,7 +145,7 @@ linkEvent.prototype.up = function(event)
 	delete this.newPos;
 	Interface.padding = false;
 	this.e.selector.update();
-}
+};
 
 linkEvent.prototype.over = function(event)
 {
@@ -151,7 +153,7 @@ linkEvent.prototype.over = function(event)
 	if (Interface.dragging){
 		return;
 	}
-}
+};
 
 linkEvent.prototype.out = function(event)
 {
@@ -159,7 +161,7 @@ linkEvent.prototype.out = function(event)
 		return;
 	}
 	document.body.style.cursor = 'default';
-}
+};
 
 linkEvent.prototype.creationPopup = function(event)
 {
@@ -175,7 +177,8 @@ linkEvent.prototype.creationPopup = function(event)
 		.append("svg:svg")
 		.attr("width", 250)
 		.attr("height", 100);
-	var segments = event.path ? event.path.pathSegList : event.target.pathSegList;
+	var segments = event.path ? event.path.getPathData() : event.target.getPathData();
+	log(segments);
 	var v = Link.vector(segments.getItem(1), segments.getItem(segments.numberOfItems-2));
 
 	var createLine = function(from, to){
@@ -195,7 +198,7 @@ linkEvent.prototype.creationPopup = function(event)
 			.attr("stroke", "black")
 			.attr("d", "M"+from+" L"+to);
 		return line;
-	}
+	};
 
 	var dist = 4; // ArrowLength
 	var space = 5; // ArrowSpace
@@ -205,7 +208,7 @@ linkEvent.prototype.creationPopup = function(event)
 		d += " L"+point.x+","+point.y;
 		d += " L"+(point.x + dist*v.ux() - (space*v.uy()))+","+(point.y + dist*v.uy() - (-space*v.ux()));
 		return d;
-	}
+	};
 
 	var s = 10;
 	var margin = 15;
@@ -282,7 +285,7 @@ linkEvent.prototype.creationPopup = function(event)
 	}
 	var width = 80;
 	var dasharray = [null, '10,5', '3,4', '1,3'];
-	var i = 0
+	var i = 0;
 	c.x += margin;
 	for (var d in dasharray){
 		var pattern = dasharray[d];
@@ -396,4 +399,4 @@ linkEvent.prototype.creationPopup = function(event)
 	// div.append(eType);
 
 	$(div).show();
-}
+};

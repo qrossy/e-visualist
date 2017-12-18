@@ -7,6 +7,7 @@
 		<script type="text/javascript" src="api/timeline_js/timeline-api.js?bundle=true"></script>
 		<script>SimileAjax.History.enabled = false;</script>
     <script type="text/javascript" src="api/d3.V3.min.js"></script>
+		<script type="text/javascript" src="api/path-data-polyfill.js"></script>
 
 		<script type="text/javascript" src="api/jquery/jquery-1.10.2.min.js"></script>
 		<script type="text/javascript" src="api/jquery/jquery-ui-1.10.3.custom.min.js"></script>

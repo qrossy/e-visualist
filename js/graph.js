@@ -14,12 +14,12 @@ Graph.nextId = 0;
 function Graph(params)
 {
 	Graph.nextId ++;
-	if (!params) params = new Object();
+	if (!params) params = {};
 	params.id ? this.id = params.id : this.id = Graph.nextId;
 
-	this.all = new Object();
-	this.nodes = new Object();
-	this.relations = new Object();
+	this.all = {};
+	this.nodes = {};
+	this.relations = {};
 	this.ctrl = new Controller(this.all);
 	this.svg = null;
 	this.name = 'Graph'+this.id;
@@ -115,35 +115,35 @@ Graph.prototype.init = function()
 	.attr("stroke", '#000000');
 
 	this.svg.eventHandler = new graphEvent(this);
-}
+};
 
 Graph.prototype.translateX = function(val)
 {
 	val ? this.main.node().transform.baseVal.getItem(0).matrix.e = val : false;
 	return this.main.node().transform.baseVal.getItem(0).matrix.e;
-}
+};
 
 Graph.prototype.translateY = function(val)
 {
 	val ? this.main.node().transform.baseVal.getItem(0).matrix.f = val : false;
 	return this.main.node().transform.baseVal.getItem(0).matrix.f;
-}
+};
 
 Graph.prototype.scale = function(val)
 {
 	val ? this.main.node().transform.baseVal.getItem(0).matrix.a = val : false;
 	val ? this.main.node().transform.baseVal.getItem(0).matrix.d = val : false;
 	return this.main.node().transform.baseVal.getItem(0).matrix.a;
-}
+};
 
 Graph.prototype.get = function(id)
 {
 	return this.all[id];
-}
+};
 
 Graph.prototype.getNodes = function(box)
 {
-	var nodes = new Array();
+	var nodes = [];
 	for (var i in this.nodes){
 		var n = this.nodes[i].getCenter();
 		if (n.x >= box[0][0] && n.x <= box[1][0] && n.y >= box[0][1] && n.y <= box[1][1]){
@@ -151,7 +151,7 @@ Graph.prototype.getNodes = function(box)
 		}
 	}
 	return nodes;
-}
+};
 
 // Return a list of edges {source:e1, target:e2} from a multi node relation
 Graph.prototype.getClique = function(entity)
@@ -176,7 +176,7 @@ Graph.prototype.getClique = function(entity)
 		}
 	}
 	return clique;
-}
+};
 
 Graph.prototype.getLayoutInfo = function()
 {
@@ -199,7 +199,7 @@ Graph.prototype.getLayoutInfo = function()
 		}
 	}
 	return {nodes:nodes, links:links};
-}
+};
 
 Graph.prototype.getData = function()
 {
@@ -210,14 +210,13 @@ Graph.prototype.getData = function()
 		data[i] = d;
 	}
 	return data;
-}
+};
 
 Graph.prototype.setData = function(data)
 {
-
+  var e = null;
 	for (var id in data){
-		var e = data[id];
-
+		e = data[id];
 		if (e.type == 0){
 			var node = new Node({id:e.id});
 			node.setData(e, this);
@@ -231,19 +230,21 @@ Graph.prototype.setData = function(data)
 	}
 
 	for (var id in data){
-		var e = data[id];
+		e = data[id];
+		var entity = null;
+
 		if (e.type == 0){
 			continue;
 		}
 		else if (e.type == 1){
-			var entity = new Link({id:e.id});
+			entity = new Link({id:e.id});
 		}
 		else if (e.type == 2){
-			var entity = new Box({id:e.id});
+			entity = new Box({id:e.id});
 
 		}
 		else if (e.type == 3){
-			var entity = new Polygon({id:e.id});
+			entity = new Polygon({id:e.id});
 		}
 
 		entity.setData(e, this);
@@ -265,7 +266,7 @@ Graph.prototype.setData = function(data)
 		entity.redraw();
 		entity.redrawLabels();
 	}
-}
+};
 
 Graph.prototype.redraw = function()
 {
@@ -277,7 +278,7 @@ Graph.prototype.redraw = function()
 	// if (this.all[i].type != 0)
 	// this.all[i].redraw();
 	// }
-}
+};
 
 Graph.prototype.checkMinDate = function(date)
 {
@@ -288,7 +289,7 @@ Graph.prototype.checkMinDate = function(date)
 		this.minDate = date;
 	}
 	return this.minDate;
-}
+};
 
 Graph.prototype.getDateZones = function()
 {
@@ -322,7 +323,7 @@ Graph.prototype.getDateZones = function()
 		this.zonesByEntity[e2] ? this.zonesByEntity[e2].end = zone : this.zonesByEntity[e2] = {end:zone}
 	}
 	return this.timeZones;
-}
+};
 
 /**
 * Create a node
@@ -332,7 +333,7 @@ Graph.prototype.getDateZones = function()
 Graph.prototype.createNode = function(params){
 	this.ctrl.addAction(Action.createNode, {e:params, g:this});
 	return this.ctrl.run();
-}
+};
 
 /**
 * Create a relation
@@ -345,44 +346,44 @@ Graph.prototype.createRelation = function(type, entities, properties)
 {
 	this.ctrl.addAction(Action.createRelation, {type:type, linked:entities, prop:properties, g:this});
 	return this.ctrl.run();
-}
+};
 
 Graph.prototype.undo = function()
 {
 	this.ctrl.undo();
-}
+};
 
 Graph.prototype.redo = function()
 {
 	this.ctrl.redo();
-}
+};
 
 Graph.prototype.stepTo = function(number)
 {
 	this.ctrl.stepTo(number);
-}
+};
 
 Graph.prototype.history = function()
 {
 	return this.ctrl.getStack();
-}
+};
 
 Graph.prototype.selector = function()
 {
 	return this.svg.select(".selectors");
-}
+};
 
 Graph.prototype.hideSelector = function()
 {
 	this.svg.select(".selectors").selectAll('.selector')
 	.attr("visibility", "hidden");
-}
+};
 
 Graph.prototype.hideHighlight = function()
 {
 	this.svg.select(".graph-highlight")
 	.attr('visibility', 'hidden');
-}
+};
 
 Graph.prototype.hideAlignmentHelper = function()
 {
@@ -390,13 +391,13 @@ Graph.prototype.hideAlignmentHelper = function()
 	.attr('visibility', 'hidden');
 	this.svg.select(".graph-alignmentV")
 	.attr('visibility', 'hidden');
-}
+};
 
 Graph.prototype.hideGraphSelector = function()
 {
 	this.svg.select(".graph-selector")
 	.attr('visibility', 'hidden');
-}
+};
 
 Graph.prototype.hideHelpers = function()
 {
@@ -404,8 +405,7 @@ Graph.prototype.hideHelpers = function()
 	this.hideHighlight();
 	this.hideGraphSelector();
 	this.hideAlignmentHelper();
-
-}
+};
 
 Graph.prototype.pos = function(x, y)
 {
@@ -420,7 +420,7 @@ Graph.prototype.pos = function(x, y)
 		graphPos.push(parseInt(pos));
 	}
 	return this.screenToCanvas(graphPos);
-}
+};
 
 Graph.prototype.screenToCanvas = function(pos)
 {
@@ -430,7 +430,7 @@ Graph.prototype.screenToCanvas = function(pos)
 		:
 		[(pos[0] - this.translateX())/this.scale(),
 		(pos[1] - this.translateY())/this.scale()];
-}
+};
 
 Graph.prototype.snap = function(pos)
 {
@@ -440,11 +440,11 @@ Graph.prototype.snap = function(pos)
 		:
 		[this.gridSize * Math.round(pos[0] / this.gridSize),
 		this.gridSize * Math.round(pos[1] / this.gridSize)];
-}
+};
 
 Graph.prototype.visibleArea = function()
 {
 	var $g = $('#graph_'+this.id);
 	return [this.screenToCanvas([0, 0]),
 	this.screenToCanvas([$g.width(),$g.height()])];
-}
+};
