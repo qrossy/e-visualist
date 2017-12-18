@@ -2,7 +2,7 @@ Link.prototype.toString = function()
 {
 	var ret = "Link";
 	return ret;
-}
+};
 
 function Link(params)
 {
@@ -26,8 +26,7 @@ function Link(params)
 		this.ctrlDateTime = 2;
 	}
 
-	this.getData = function()
-	{
+	this.getData = function(){
 		var data = this.getMainData();  // inheritance from entity.js
 		data.width = this.width;				// Link's width (Number)
 		data.space = this.space;				// orthogonal position (if nb links between connected > 1)
@@ -42,7 +41,7 @@ function Link(params)
 		data.source = this.source ? this.source.id : null;
 		data.target = this.target ? this.target.id : null;
 		return data;
-	}
+	};
 }
 
 Link.prototype.create = function()
@@ -91,7 +90,7 @@ Link.prototype.create = function()
 		// parent.appendChild(this.svg.node());
 	// }
 	this.createLabels();
-}
+};
 
 Link.prototype.drawTheme = function()
 {
@@ -117,7 +116,7 @@ Link.prototype.drawTheme = function()
 			// this.svg.select(id)
 				// .attr("d", d);
 		// }
-}
+};
 
 Link.prototype.drawSLink = function()
 {
@@ -160,7 +159,7 @@ Link.prototype.drawSLink = function()
 	this.updateSpacers(path.node(), '.e'+this.source.id);
 	this.setMainPath(path.attr('d'));
 	this.svg.select(".click_e"+this.source.id).attr("d", path.attr("d"));
-}
+};
 
 Link.prototype.drawBLink = function()
 {
@@ -190,7 +189,7 @@ Link.prototype.drawBLink = function()
 		.attr("stroke-dasharray", this.dasharray)
 		.attr("stroke", this.secondColor)
 		.attr("visibility", "visible");
-}
+};
 
 Link.prototype.drawMLink = function()
 {
@@ -232,7 +231,7 @@ Link.prototype.drawMLink = function()
 		this.updateSpacers(path, id);
 		this.svg.select(".click_e"+i).attr("d", this.svg.select(id).attr("d"));
 	}
-}
+};
 
 Link.prototype.redraw = function()
 {
@@ -255,13 +254,13 @@ Link.prototype.redraw = function()
 	if (this.arrow != null){
 		this.drawArrows();
 	}
-}
+};
 
 Link.prototype.updateSpacers = function(path, id)
 {
 	var space = parseInt((this.space+1)/2);
 	space = this.space%2 == 0 ? space*this.distToLink : (-space*this.distToLink);
-
+	log(path);
 	var segments = path.pathSegList;
 	var init = segments.getItem(0);
 	var end = segments.getItem(segments.numberOfItems-1);
@@ -325,7 +324,7 @@ Link.prototype.updateSpacers = function(path, id)
 			}
 		}
 	}
-}
+};
 
 Link.prototype.setLinkCenter = function()
 {
@@ -345,7 +344,7 @@ Link.prototype.setLinkCenter = function()
 	}
 	this.x = pos[0]/this.connectCount();
 	this.y = pos[1]/this.connectCount();
-}
+};
 
 Link.prototype.isThemeLink = function()
 {
@@ -357,7 +356,7 @@ Link.prototype.isThemeLink = function()
 		}
 	}
 	return themeLink;
-}
+};
 
 Link.prototype.drawArrows = function()
 {
@@ -366,7 +365,7 @@ Link.prototype.drawArrows = function()
 			this.addArrow(i);
 		}
 	}
-}
+};
 
 Link.prototype.addArrow = function(entityId)
 {
@@ -406,7 +405,7 @@ Link.prototype.addArrow = function(entityId)
 		.attr("stroke-width", this.width > 4 ? this.width/2 : this.width)
 		.attr("stroke", (this.connectCount() == 2 && this.arrow == this.id && entityId == this.target.id) ? this.secondColor : this.color)
 		.attr("d",d);
-}
+};
 
 
 Link.prototype.addMainPath = function()
@@ -417,29 +416,29 @@ Link.prototype.addMainPath = function()
 			.attr("pointer-events", "none")
 			.attr("visibility", "hidden");
 	}
-}
+};
 
 Link.prototype.removeMainPath = function()
 {
 	this.svg.select(".mainPath").remove();
-}
+};
 
 Link.prototype.setMainPath = function(d)
 {
 	this.mainPath = d;
 	this.svg.select(".mainPath").attr("d", d);
-}
+};
 
 Link.prototype.getMainPath = function()
 {
 	return this.svg.select(".mainPath");
-}
+};
 
 Link.prototype.getRootMainPath = function()
 {
 	var clink = this.g.relations[this.hash()][0];
 	return clink.svg.select(".mainPath");
-}
+};
 
 Link.getPathIndex = function(segments, point)
 {
@@ -453,7 +452,7 @@ Link.getPathIndex = function(segments, point)
 		}
 	}
 	return index = get[Math.min.apply(Math, dist)]+1;
-}
+};
 
 Link.getDistanceToSegment = function(pi, pj, pc)
 {
@@ -466,7 +465,7 @@ Link.getDistanceToSegment = function(pi, pj, pc)
 	else{
 		return Math.sqrt(Vic.norm()*Vic.norm()-n*n);
 	}
-}
+};
 
 Link.getIntersection = function(entity, point)
 {
@@ -494,7 +493,7 @@ Link.getIntersection = function(entity, point)
 	}
 
 	return nodeIntersect;
-}
+};
 
 Link.boxIntersect = function (bbox, line){
 	var n = [{x:bbox.x, y:bbox.y}, {x:bbox.x+bbox.width, y:bbox.y}];
@@ -522,7 +521,7 @@ Link.boxIntersect = function (bbox, line){
 		var v2 = Link.vector(inter[1], line[1]);
 		return v1.norm() < v2.norm() ? inter[0] : inter[1];
 	}
-}
+};
 
 //FROM: http://softsurfer.com/Archive/algorithm_0104/algorithm_0104B.htm#intersect2D_SegSeg%28%29
 
@@ -619,14 +618,15 @@ Link.intersect = function(S1, S2, I0, I1 )
     I0.x = S1[0].x + sI * u.x;
 	I0.y = S1[0].y + sI * u.y;	// compute S1 intersect point
     return 1;
-}
+};
 
 Link.dot = function(u,v){
    return u.x * v.x + u.y * v.y;
-}
+};
+
 Link.perp = function(u,v){
 	return u.x * v.y - u.y * v.x;
-}
+};
 
 // inSegment(): determine if a point is inside a segment
 //    Input:  a point P, and a collinear segment S
@@ -647,7 +647,7 @@ Link.inSegment = function(P, S)
             return 1;
     }
     return 0;
-}
+};
 
 /*
 * Vector
@@ -664,7 +664,7 @@ Link.vector = function(from, to)
 	v.ux = function() {return this.norm() != 0 ? this.x/this.norm() : 0;};
 	v.uy = function() {return this.norm() != 0 ? this.y/this.norm() : 0;};
 	return v;
-}
+};
 
 /**
 * Line Equation
@@ -678,7 +678,7 @@ Link.lineEq = function(vector, point)
 	var a = vector.y/vector.x;
 	var b = p[1]-a*p[0];
 	return {a:a, b:b};
-}
+};
 
 /**
 * Line Intersection
@@ -691,10 +691,10 @@ Link.lineIntersect = function(lineA, lineB)
 	var x = (lineA.b-lineB.b)/(lineB.a-lineA.a);
 	var y = lineA.a*x + lineA.b;
 	return {x:x, y:y};
-}
+};
 
 Link.applyCoord = function(from, to)
 {
 	to.x = from.x;
 	to.y = from.y;
-}
+};

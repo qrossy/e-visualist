@@ -1,7 +1,7 @@
 nodeEvent.prototype.toString = function()
 {
 	return "NodeEvent";
-}
+};
 
 function nodeEvent(graph, node)
 {

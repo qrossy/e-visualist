@@ -6,7 +6,7 @@
 function Action()
 {
 }
-var params = new Object();
+var params = {};
 var undo = false;
 
 
@@ -34,7 +34,7 @@ Action.createNode = function CreateNode(params, undo)
 		delete params.g.nodes[params.e.id];
 	}
 	return params.e;
-}
+};
 
 /**
 * Create Relation
@@ -90,7 +90,7 @@ Action.createRelation = function CreateRelation(params, undo)
 		}
 	}
 	return params.e;
-}
+};
 
 /**
 * Create Corner
@@ -123,7 +123,7 @@ Action.createCorner = function CreateCorner(params, undo)
 	for (var id in links){
 		links[id].redraw();
 	}
-}
+};
 
 /**
 * Move Corner
@@ -135,7 +135,7 @@ Action.moveCorner = function MoveCorner(params, undo)
 	var oldd = params.path.attr('d');
 	params.path.attr('d', params.d);
 	params.d = oldd;
-}
+};
 
 
 /**
@@ -167,7 +167,7 @@ Action.removeCorner = function RemoveCorner(params, undo)
 	for (var id in links){
 		links[id].redraw();
 	}
-}
+};
 
 /**
 * Add Entity
@@ -197,7 +197,7 @@ Action.add = function Add(params, undo)
 			delete params.e.connect[i].connect[params.e.id];
 		}
 	}
-}
+};
 
 /**
 * Remove Entity
@@ -215,7 +215,7 @@ Action.removeEntity = function RemoveEntity(params, undo)
 	else if (params.e.type == 2 || params.e.type == 3){
 		Action.removeBox(params, undo);
 	}
-}
+};
 
 /**
 * Remove Node
@@ -266,7 +266,7 @@ Action.removeNode = function RemoveNode(params, undo)
 			}
 		}
 	}
-}
+};
 
 /**
 * Remove Link
@@ -322,7 +322,7 @@ Action.removeLink = function RemoveLink(params, undo)
 			params.e.connect[id].connect[params.e.id] = params.e;
 		}
 	}
-}
+};
 
 /**
 * Remove Box
@@ -346,7 +346,7 @@ Action.removeBox = function RemoveBox(params, undo)
 			params.e.connect[id].connect[params.e.id] = params.e;
 		}
 	}
-}
+};
 
 /**
 * Move Node
@@ -361,7 +361,7 @@ Action.move = function Move(params, undo)
 	params.e.redraw();
 	params.e.updateConnect(); //? need to redraw connect !
 	params.pos = oldPos;
-}
+};
 
 /**
 * Resize Node
@@ -375,7 +375,7 @@ Action.resize = function Resize(params, undo)
 	params.e.redraw();
 	params.e.updateConnect();
 	params.box = oldBox;
-}
+};
 
 
 
@@ -392,7 +392,7 @@ Action.change = function ChangeProperties(params, undo)
 	params.e.redraw();
 	params.e.updateConnect();
 	params.data = oldData;
-}
+};
 
 /**
 * Change Label
@@ -406,7 +406,7 @@ Action.changeLabel = function ChangeLabel(params, undo)
 	params.l.redraw();
 	params.l.e.updateConnect();
 	params.txt = oldData;
-}
+};
 
 /**
 * Change Entity renderer
@@ -423,7 +423,7 @@ Action.renderAs = function renderAs(params, undo)
 		entity.svg.remove();
 		delete entity;
 	}
-}
+};
 
 
 /**
@@ -437,7 +437,7 @@ Action.composite = function Composite(params, undo)
 	for (var id in params.actions){
 		params.actions[id].func(params.actions[id].d, undo);
 	}
-}
+};
 
 /**
 * Empty
@@ -447,4 +447,4 @@ Action.composite = function Composite(params, undo)
 */
 Action.empty = function Start(params, undo)
 {
-}
+};
