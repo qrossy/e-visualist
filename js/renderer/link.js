@@ -260,7 +260,6 @@ Link.prototype.updateSpacers = function(path, id)
 {
 	var space = parseInt((this.space+1)/2);
 	space = this.space%2 == 0 ? space*this.distToLink : (-space*this.distToLink);
-	log(path);
 	var segments = path.pathSegList;
 	var init = segments.getItem(0);
 	var end = segments.getItem(segments.numberOfItems-1);

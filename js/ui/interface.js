@@ -14,7 +14,7 @@ Interface.get = function() {
 		this.instance = new Interface();
 	}
 	return this.instance;
-}
+};
 
 Interface.icons = null;
 Interface.colors = [
@@ -29,8 +29,8 @@ Interface.dragging = false;
 Interface.modifiedEntity = null;
 Interface.modifiedLabel = null;
 Interface.selectedCorner = null;
-Interface.timebar;
-Interface.resizeTimerID;
+Interface.timebar = null;
+Interface.resizeTimerID = null;
 Interface.padding = false;
 
 Interface.timeBarParams = {
@@ -63,8 +63,7 @@ Interface.timeBarBandInfos = [
 		timeZone:       Interface.timeBarParams.timeZone,
 		eventSource: 	null,
 		theme:			Interface.timeBarTheme,
-	})
-	,
+	}),
 	Timeline.createBandInfo({
 		width:          "30%",
 		intervalUnit:   Timeline.DateTime.MONTH,
@@ -89,7 +88,6 @@ Interface.timeBarBandInfos = [
 			{pixelsPerInterval: 200,  unit: Timeline.DateTime.YEAR},
 			{pixelsPerInterval: 100,  unit: Timeline.DateTime.YEAR}
 		)
-
 	})
 ];
 
@@ -105,7 +103,7 @@ Interface.prototype.setKeyEvents = function()
 	$(document).keydown(function(event) {
 		if(event.keyCode == 18){ // click Alt to add link !
 			if (!Interface.addingLink){
-				Interface.addingLink = new Object();
+				Interface.addingLink = {};
 				Interface.addingLink.type = 'link';
 				Interface.addingLink.color = "grey";
 			}
@@ -125,7 +123,7 @@ Interface.prototype.setKeyEvents = function()
 					Interface.selectedCorner = false;
 				}
 				else{
-					var actions = new Array();
+					var actions = [];
 					g.svg.select('.selectors').selectAll('[visibility="visible"]').each(function(){
 						var e = g.get($(this).attr('entity'));
 						actions.push([Action.removeEntity, {e:e, g:g}]);
@@ -145,7 +143,7 @@ Interface.prototype.setKeyEvents = function()
 				Interface.addingLink = false;
 			}
 		});
-	}
+	};
 
 	Interface.prototype.init = function()
 	{
@@ -226,7 +224,7 @@ Interface.prototype.setKeyEvents = function()
 			$('#visualistOpen').append(input);
 			$('#visualistOpen').submit();
 			input.remove();
-		})
+		});
 		//Save Graph
 		var form = $('<form id="visualistForm" name="viualistForm" method="post" action="save.php" style="float:right;">')
 		.append('<input type="text" id="saveString" name="Content" style="visibility:hidden"/>')
@@ -257,7 +255,7 @@ Interface.prototype.setKeyEvents = function()
 			.size([size[0], size[1]])
 			.distance(20)
 			.charge(-10000)
-			.gravity(.5);
+			.gravity(0.5);
 
 			force.on("tick", function(d) {
 				if (d.alpha < 0.06){
@@ -321,7 +319,7 @@ Interface.prototype.setKeyEvents = function()
 		$('.ui-layout-south').remove();
 
 		this.setKeyEvents();
-	}
+	};
 
 	/**
 	* Load GraphFile
@@ -340,7 +338,7 @@ Interface.prototype.setKeyEvents = function()
 		g.svg.attr('width', $('.ui-layout-center').width());
 		g.svg.attr('height', $('.ui-layout-center').height());
 		g.setData(data);
-	}
+	};
 
 	/**
 	* Update the Property Div
@@ -397,7 +395,7 @@ Interface.prototype.setKeyEvents = function()
 			$( "#slider-gridSize" ).slider( "value", self.g.gridSize);
 		}
 		else if (entity.type == 0){
-			var eType = $('<div class="visualist_node_type" style="margin-bottom:5px;">')
+			var eType = $('<div class="visualist_node_type" style="margin-bottom:5px;">');
 			eType.append('<input type="radio" id="visualist_node_type1" name="radio" value="0"/><label for="visualist_node_type1">Icon</label>');
 			eType.append('<input type="radio" id="visualist_node_type2" name="radio" value="1"/><label for="visualist_node_type2">Box</label>');
 			eType.append('<input type="radio" id="visualist_node_type3" name="radio" value="2"/><label for="visualist_node_type3">Circle</label>');
@@ -420,7 +418,7 @@ Interface.prototype.setKeyEvents = function()
 				entity.redraw();
 			});
 
-			var eSet = $('<div class="visualist_node_set" style="margin-bottom:5px;">')
+			var eSet = $('<div class="visualist_node_set" style="margin-bottom:5px;">');
 			eSet.append('<input type="checkbox" id="visualist_node_set" name="radio"/><label for="visualist_node_set">Set</label>');
 			div.append(eSet);
 			if (entity.set){
@@ -435,7 +433,7 @@ Interface.prototype.setKeyEvents = function()
 				entity.updateConnect();
 			});
 
-			var eTheme = $('<div class="visualist_node_theme" style="margin-bottom:5px;">')
+			var eTheme = $('<div class="visualist_node_theme" style="margin-bottom:5px;">');
 			eTheme.append('<input type="checkbox" id="visualist_node_theme" name="radio"/><label for="visualist_node_theme">ThemeLine</label>');
 			div.append(eTheme);
 			if (entity.theme.draw){
@@ -449,7 +447,7 @@ Interface.prototype.setKeyEvents = function()
 				entity.redraw();
 			});
 		}
-	}
+	};
 
 	/**
 	* Update the History Panel
@@ -487,7 +485,7 @@ Interface.prototype.setKeyEvents = function()
 			});
 			$('.visualist-history').prepend($step);
 		}
-	}
+	};
 
 	/**
 	* Set SVG width and height on Resize
@@ -498,6 +496,7 @@ Interface.prototype.setKeyEvents = function()
 		var g = this.currentGraph;
 		if (g){
 			var size = this.canvasSize();
+			if (size[0] <= 0 || size[1] <= 0){return;}
 			g.svg.attr('width', size[0]);
 			g.svg.attr('height', size[1]);
 			var grid = g.svg.select(".grid");
@@ -510,7 +509,7 @@ Interface.prototype.setKeyEvents = function()
 		// Interface.timebar.layout();
 		// }, 500);
 		// }
-	}
+	};
 
 	/**
 	* Get Size of the Center Panel
@@ -532,7 +531,7 @@ Interface.prototype.setKeyEvents = function()
 		-$('.ui-layout-resizer-south').outerHeight()
 		-( $("#visualist_timebar").is(':visible') ? $('.visualist_timebar').outerHeight() : 0);
 		return [w, h];
-	}
+	};
 
 	Interface.prototype.createIconSelector = function()
 	{
@@ -609,7 +608,7 @@ Interface.prototype.setKeyEvents = function()
 		rType.append('<input type="radio" id="visualist_linkSelector_type2" name="radio" value="polygon"/><label for="visualist_linkSelector_type2">Polygon</label>');
 		rType.append('<input type="radio" id="visualist_linkSelector_type3" name="radio" value="box"/><label for="visualist_linkSelector_type3">Box</label>');
 		rType.find('input').click(function(e) {
-			Interface.addingLink = new Object();
+			Interface.addingLink = {};
 			Interface.addingLink.type = $(this).attr('value');
 			Interface.addingLink.color = "grey";
 		});
@@ -622,7 +621,7 @@ Interface.prototype.setKeyEvents = function()
 		});
 		$("#addCorner").attr('checked', false);
 		$("#addCorner").button();
-	}
+	};
 
 	Interface.createRelation = function(event, nodes)
 	{
@@ -636,7 +635,7 @@ Interface.prototype.setKeyEvents = function()
 			$(this).attr('checked', false);
 			$(this).button('refresh');
 		});
-	}
+	};
 
 	Interface.UpdateTimebar = function(zones)
 	{
@@ -644,13 +643,13 @@ Interface.prototype.setKeyEvents = function()
 			return;
 		}
 		var g = Interface.get().currentGraph;
+		var source = null;
 		if (!g){
 			zones = [];
-			var source = null;
 		}
 		else{
 			if (!zones) zones = g.getDateZones();
-			var source = g.timeBarEventSource;
+			source = g.timeBarEventSource;
 		}
 		var newband = Timeline.createHotZoneBandInfo({
 			zones:			zones,
@@ -677,7 +676,7 @@ Interface.prototype.setKeyEvents = function()
 				Interface.timebarStart = Interface.timebar.getBand(0)._ether._start;
 			}
 		});
-	}
+	};
 
 	Timeline.OriginalEventPainter.prototype._showBubble = function(x, y, evt)
 	{
@@ -686,19 +685,19 @@ Interface.prototype.setKeyEvents = function()
 		var img = $(events[evt._id]).find('img');
 		var g = Interface.get().currentGraph;
 		var entity = g.get(evt._id);
-
+		var icon = "";
 		if (evt._icon == "js/api/timeline_js/images/gray-circle.png"){
-			var icon = "js/api/timeline_js/images/dull-blue-circle.png";
+			icon = "js/api/timeline_js/images/dull-blue-circle.png";
 			entity.ctrlDateTime = 1;
 		}
 		else if (evt._icon == "js/api/timeline_js/images/dull-blue-circle.png"){
-			var icon = "js/api/timeline_js/images/dull-green-circle.png";
+			icon = "js/api/timeline_js/images/dull-green-circle.png";
 			entity.ctrlDateTime = 0;
 		}
 		else if (evt._icon == "js/api/timeline_js/images/dull-green-circle.png"){
-			var icon = "js/api/timeline_js/images/gray-circle.png";
+			icon = "js/api/timeline_js/images/gray-circle.png";
 			entity.ctrlDateTime = 2;
-			var x = band._ether.dateToPixelOffset(entity.startDateTime);
+			x = band._ether.dateToPixelOffset(entity.startDateTime);
 			if (entity.w) x -= entity.w/2;
 
 			entity.x = (x - g.translateX())/g.scale();
@@ -707,4 +706,4 @@ Interface.prototype.setKeyEvents = function()
 		}
 		evt._icon = icon;
 		img.attr('src', icon);
-	}
+	};

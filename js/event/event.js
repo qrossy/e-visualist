@@ -25,7 +25,7 @@ function visEvent(graph, elem)
 		}
 		else
 		return null;
-	}
+	};
 
 	var self = this;
 
@@ -39,7 +39,7 @@ function visEvent(graph, elem)
 			$(document).unbind('mouseup', onMouseUp);
 		}
 		Interface.dragging = on;
-	}
+	};
 
 	var onMouseMove = function(event)
 	{
@@ -50,7 +50,7 @@ function visEvent(graph, elem)
 		}
 		self.move(event);
 		if (self.stopProp){event.stopPropagation();}
-	}
+	};
 
 	var onMouseUp = function(event)
 	{
@@ -58,7 +58,7 @@ function visEvent(graph, elem)
 		toggleDrag(false);
 		self.up(event);
 		if (self.stopProp){event.stopPropagation();}
-	}
+	};
 
 	var onMouseDown = function(event)
 	{
@@ -81,7 +81,7 @@ function visEvent(graph, elem)
 
 		toggleDrag(true);
 		if (self.stopProp){event.stopPropagation();}
-	}
+	};
 
 	var onMouseOver = function(event)
 	{
@@ -92,7 +92,7 @@ function visEvent(graph, elem)
 		event.preventDefault();
 		self.over(event);
 		if (self.stopProp){event.stopPropagation();}
-	}
+	};
 
 	var onMouseOut = function(event)
 	{
@@ -103,7 +103,7 @@ function visEvent(graph, elem)
 		event.preventDefault();
 		self.out(event);
 		if (self.stopProp){event.stopPropagation();}
-	}
+	};
 
 	// var onKeyDown = function(event)
 	// {

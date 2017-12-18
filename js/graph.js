@@ -48,8 +48,8 @@ Graph.prototype.init = function()
 	.append("svg:rect")
 	.attr("x","0")
 	.attr("y","0")
-	.attr("width","1")
-	.attr("height","1")
+	.attr("width","100")
+	.attr("height","100")
 	.attr("fill", "grey");
 	//Grid
 	this.svg.append("svg:rect")
