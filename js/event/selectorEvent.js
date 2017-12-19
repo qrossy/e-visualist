@@ -99,12 +99,12 @@ selectorEvent.prototype.move = function(event)
 			}
 			var links = this.g.relations[this.e.elem.hash()];
 			var path = this.e.elem.connectCount() == 2 ? this.e.elem.getRootMainPath() : links[0].svg.select('.'+info[0]);
-			var cp = path.node().getPathData().getItem(index);
+			var segments = path.node().getPathData();
+			var cp = segments.getItem(index);
 			cp.x += (this.newPos[0] - this.prevPos[0]);
 			cp.y += (this.newPos[1] - this.prevPos[1]);
-
-			var prev = path.node().getPathData().getItem(index-1);
-			var next = path.node().getPathData().getItem(index+1);
+			var prev = segments.getItem(index-1);
+			var next = segments.getItem(index+1);
 			if (Math.abs(prev.x - cp.x) <= 5){
 				cp.x = prev.x;
 				this.g.svg.select('.graph-alignmentV')
@@ -141,6 +141,7 @@ selectorEvent.prototype.move = function(event)
 					.attr("y2", cp.y + 2)
 					.attr("visibility", "visible");
 			}
+			path.attr("d", segments.path());
 			for (var id in links){
 				links[id].redraw();
 			}

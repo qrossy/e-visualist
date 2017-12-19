@@ -913,7 +913,6 @@ if (!SVGPathElement.prototype.getPathData || !SVGPathElement.prototype.setPathDa
         pathSeg.x = pathSeg.values[0];
         pathSeg.y = pathSeg.values[1];
       }
-      pathData.numberOfItems = pathData.length;
       pathData.getItem = function(index){
         return pathData[index];
       };
@@ -926,6 +925,21 @@ if (!SVGPathElement.prototype.getPathData || !SVGPathElement.prototype.setPathDa
         pathData.numberOfItems += 1;
         return pathData.splice(index, 0, item);
       };
+      pathData.getSegIndexAtLength = function(len){
+        var dist = 0;
+        for (var i = 0, l = pathData.length-1; i < l; i += 1) {
+          var seg1 = pathData[i];
+          var seg2 = pathData[i+1];
+          var dx = seg2.x - seg1.x;
+          var dy = seg2.y - seg1.y;
+          var norm = Math.sqrt(dx*dx+dy*dy);
+          dist += norm;
+          if (len < dist){
+            return i+1;
+          }
+        }
+        return null;
+      }
       pathData.path = function() {
         var d = "";
         if (pathData.length === 0) {
@@ -936,9 +950,7 @@ if (!SVGPathElement.prototype.getPathData || !SVGPathElement.prototype.setPathDa
             var seg = pathData[i];
             if (i > 0) { d += " "; }
             d += seg.type;
-            if (seg.values && seg.values.length > 0) {
-              d += " " + seg.values.join(" ");
-            }
+            d += " " + seg.x+" "+seg.y;
           }
           return d;
         }

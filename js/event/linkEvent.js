@@ -26,20 +26,20 @@ linkEvent.prototype.down = function(event)
 
 	if (Interface.addingCorner){
 		var id = null;
-		var segments = null;
+		var path;
 		var point = this.g.pos(event.pageX, event.pageY);
 		if (this.e.connectCount() == 2 && this.e.arrow == this.e.id){
-			segments = this.e.getMainPath().node().getPathData();
+			path = this.e.getMainPath().node();
 		}
 		else{
 			id = $(event.target).attr('class').split('e')[1];
-			segments = this.e.svg.select(".e"+id).node().getPathData();
+			path = this.e.svg.select(".e"+id).node();
 		}
+		var segments = path.getPathData();
 		var index = Link.getPathIndex(segments, point);
 		var prev = segments.getItem(index-1);
 		var next = segments.getItem(index);
 		var ratio = Link.vector(prev, point).norm() / Link.vector(prev, next).norm();
-		this.e.setMainPath(segments.path);
 		this.g.ctrl.addAction(Action.createCorner, {g: this.g, e:this.e, ratio:ratio, index:index, id:id});
 		this.g.ctrl.run();
 		Interface.addingCorner = false;
@@ -178,8 +178,7 @@ linkEvent.prototype.creationPopup = function(event)
 		.attr("width", 250)
 		.attr("height", 100);
 	var segments = event.path ? event.path.getPathData() : event.target.getPathData();
-	log(segments);
-	var v = Link.vector(segments.getItem(1), segments.getItem(segments.numberOfItems-2));
+	var v = Link.vector(segments.getItem(1), segments.getItem(segments.length-2));
 
 	var createLine = function(from, to){
 		var line = svg.append("svg:g");

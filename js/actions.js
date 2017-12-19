@@ -99,28 +99,26 @@ Action.createRelation = function CreateRelation(params, undo)
 */
 Action.createCorner = function CreateCorner(params, undo)
 {
+	var path;
 	var links = params.g.relations[params.e.hash()];
 	if (params.e.connectCount() == 2){
-		var path = links[0].getMainPath();
+		path = links[0].getMainPath();
 	}
 	else{
-		var path = links[0].svg.select(".e"+params.id);
+		path = links[0].svg.select(".e"+params.id);
 	}
 	var segments = path.node().getPathData();
 	if (!undo){
 		var prev = segments.getItem(params.index-1);
 		var next = segments.getItem(params.index);
 		var v = Link.vector(prev, next);
-		var point = [prev.x + v.x*params.ratio, prev.y + v.y*params.ratio];
-		path.attr('d', path.attr('d') + " L"+point[0]+","+point[1]);
-		var corner = segments.getItem(segments.numberOfItems-1);
-		segments.insertItemBefore(corner, params.index);
-		segments.removeItem(segments.numberOfItems-1);
+		var point = {type:"L", x:prev.x + v.x*params.ratio, y:prev.y + v.y*params.ratio};
+		segments.insertItemBefore(point, params.index);
 	}
 	else{
 		segments.removeItem(params.index);
 	}
-	params.e.setMainPath(segments.path);
+	path.attr("d", segments.path());
 	for (var id in links){
 		links[id].redraw();
 	}
@@ -146,27 +144,24 @@ Action.moveCorner = function MoveCorner(params, undo)
 */
 Action.removeCorner = function RemoveCorner(params, undo)
 {
+	var path;
 	var links = params.g.relations[params.e.hash()];
 	if (params.e.connectCount() == 2){
-		var path = links[0].getMainPath();
+		path = links[0].getMainPath();
 	}
 	else{
-		var path = links[0].svg.select("."+params.id);
+		path = links[0].svg.select("."+params.id);
 	}
 	var segments = path.node().getPathData();
 	if (!undo){
 		var p = segments.getItem(params.index);
-		params.point = {x: p.x, y: p.y};
+		params.point = {type:"L", x: p.x, y: p.y};
 		segments.removeItem(params.index);
-		params.e.setMainPath(segments.path);
 	}
 	else{
-		path.attr('d', path.attr('d') + " L"+params.point.x+","+params.point.y);
-		var corner = segments.getItem(segments.numberOfItems-1);
-		segments.insertItemBefore(corner, params.index);
-		segments.removeItem(segments.numberOfItems-1);
-		params.e.setMainPath(segments.path);
+		segments.insertItemBefore(params.point, params.index);
 	}
+	path.attr("d", segments.path());
 	for (var id in links){
 		links[id].redraw();
 	}

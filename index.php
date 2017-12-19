@@ -100,7 +100,7 @@
 			$('#graph_'+g.id).data('data', g);
 			g.init();
 			var actions = new Array();
-			var n = 5;
+			var n = 2;
 			for (var i = 0; i < n; i++){
 				actions.push([Action.createNode, {e:{x:Math.random()*500,y:Math.random()*300,icon:'img/person/male.png',shape:0}, g:g}]);
 			}

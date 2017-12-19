@@ -198,7 +198,6 @@ Node.prototype.bBox = function(mode)
 		return;
 	}
 	var box = elm.getBBox();
-	log(box);
 	box.x = this.x ? this.x : 0;
 	box.y = this.y ? this.y : 0;
 	if (mode == 'all'){

@@ -80,15 +80,6 @@ Link.prototype.create = function()
 			.attr("pointer-events", "stroke")
 			.attr("visibility", "hidden");
 	}
-
-	// //Reorder Element !
-	// parent = document.getElementById('links');
-	// if (parent.childNodes.length > 0){
-		// parent.insertBefore(this.svg.node(), parent.childNodes[0]);
-	// }
-	// else{
-		// parent.appendChild(this.svg.node());
-	// }
 	this.createLabels();
 };
 
@@ -128,18 +119,18 @@ Link.prototype.drawSLink = function()
 	this.svg.select('.e'+this.target.id).attr("visibility", "hidden");
 	if (this.space == 0){
 		var segments = this.getMainPath().node().getPathData();
-		if (this.getMainPath().attr("d") && segments.numberOfItems > 4){
+		if (this.getMainPath().attr("d") && segments.length > 4){
 			var start = Link.getIntersection(this.source, segments.getItem(2));
 			if (start.x && start.y){
 				Link.applyCoord(start, segments.getItem(0));
 				Link.applyCoord(start, segments.getItem(1));
 			}
-			var end = Link.getIntersection(this.target, segments.getItem(segments.numberOfItems-3));
+			var end = Link.getIntersection(this.target, segments.getItem(segments.length-3));
 			if (end.x && end.y){
-				Link.applyCoord(end, segments.getItem(segments.numberOfItems-1));
-				Link.applyCoord(end, segments.getItem(segments.numberOfItems-2));
+				Link.applyCoord(end, segments.getItem(segments.length-1));
+				Link.applyCoord(end, segments.getItem(segments.length-2));
 			}
-			this.setMainPath(segments.path);
+			this.setMainPath(segments.path());
 		}
 		else {
 			var start = Link.getIntersection(this.source,this.target.getCenter());
@@ -148,7 +139,7 @@ Link.prototype.drawSLink = function()
 				this.setMainPath("M"+start.x+","+start.y+" L"+start.x+","+start.y+
 					" L"+end.x+","+end.y+" L"+end.x+","+end.y);
 			}
-			else{
+			else {
 				return;
 			}
 		}
@@ -169,11 +160,9 @@ Link.prototype.drawBLink = function()
 	var l = sPath.node().getTotalLength()*this.ratio;
 	var center = sPath.node().getPointAtLength(l);
 	Link.applyCoord(center, this);
-	this.x = center.x;
-	this.y = center.y;
-	var i = sPath.node().getPathSegAtLength(l);
 	var sSeg = sPath.node().getPathData();
-	for (var s = sSeg.numberOfItems-1; s >= i; s--){
+	var i = sSeg.getSegIndexAtLength(l);
+	for (var s = sSeg.length-1; s >= i; s--){
 		var p = sSeg.getItem(s);
 		if (!d){
 			var d = 'M'+p.x+','+p.y+' ';
@@ -183,7 +172,7 @@ Link.prototype.drawBLink = function()
 		}
 		sSeg.removeItem(s);
 	}
-	sPath.attr('d', sPath.attr('d')+' L'+center.x+' '+center.y);
+	sPath.attr('d', sSeg.path()+' L'+center.x+' '+center.y);
 	this.svg.select('.e'+this.target.id)
 		.attr('d', d+' L'+center.x+' '+center.y)
 		.attr("stroke-width", this.width)
@@ -207,8 +196,8 @@ Link.prototype.drawMLink = function()
 			var segments = path.getPathData();
 			if (this.svg.select(id).attr('d')){
 				if (this.x && this.y){
-					Link.applyCoord(this, segments.getItem(segments.numberOfItems-1));
-					Link.applyCoord(this, segments.getItem(segments.numberOfItems-2));
+					Link.applyCoord(this, segments.getItem(segments.length-1));
+					Link.applyCoord(this, segments.getItem(segments.length-2));
 				}
 				var next = segments.getItem(2);
 				var start = Link.getIntersection(this.connect[i], next);
@@ -263,13 +252,13 @@ Link.prototype.updateSpacers = function(path, id)
 	space = this.space%2 == 0 ? space*this.distToLink : (-space*this.distToLink);
 	var segments = path.getPathData();
 	var init = segments.getItem(0);
-	var end = segments.getItem(segments.numberOfItems-1);
+	var end = segments.getItem(segments.length-1);
 	if (init.x == end.x && init.y == end.y) {return;}
 
 	var c1 = segments.getItem(1);
-	var c2 = segments.getItem(segments.numberOfItems-2);
+	var c2 = segments.getItem(segments.length-2);
 	var next = segments.getItem(2);
-	var last = segments.getItem(segments.numberOfItems-3);
+	var last = segments.getItem(segments.length-3);
 	var v1 = Link.vector(init, next);
 	var v2 = Link.vector(end, last);
 
@@ -277,21 +266,22 @@ Link.prototype.updateSpacers = function(path, id)
 	c2.y = end.y + this.distToNode*v2.uy() + (-space*v2.ux());
 	c1.x = init.x + this.distToNode*v1.ux() + (-space*v1.uy());
 	c1.y = init.y + this.distToNode*v1.uy() + (space*v1.ux());
+	path.setAttribute("d", segments.path());
 
 	if (this.space != 0){
-		var segments = this.connectCount() == 2 ?
+		var rootSegments = this.connectCount() == 2 ?
 			this.getRootMainPath().node().getPathData() :
 			this.g.relations[this.hash()][0].svg.select(id).node().getPathData();
-		if (segments.numberOfItems > 4){
-			for (var i = 2; i < segments.numberOfItems - 2; i++){
-				var p = segments.getItem(i);
-				var v1 = Link.vector(segments.getItem(i-1), p);
-				var v2 = Link.vector(segments.getItem(i+1), p);
+		if (rootSegments.length > 4){
+			for (var i = 2; i < rootSegments.length - 2; i++){
+				var p = rootSegments.getItem(i);
+				v1 = Link.vector(rootSegments.getItem(i-1), p);
+				v2 = Link.vector(rootSegments.getItem(i+1), p);
 				var m = Link.vector([0,0],[0,0]);
 				m.x = (v1.ux()+v2.ux());
 				m.y = (v1.uy()+v2.uy());
-				var cp = path.getPathData().getItem(i);
-				var inter = Link.lineIntersect(Link.lineEq(v1, path.getPathData().getItem(i-1)),Link.lineEq(m, segments.getItem(i)));
+				var cp = segments.getItem(i);
+				var inter = Link.lineIntersect(Link.lineEq(v1, segments.getItem(i-1)),Link.lineEq(m, rootSegments.getItem(i)));
 				if (inter.x && inter.y){
 					var v = Link.vector(p, inter);
 					if (v.norm() > 3*Math.abs(space)){
@@ -304,24 +294,25 @@ Link.prototype.updateSpacers = function(path, id)
 					}
 				}
 				else if (v1.x == 0){
-					cp.x = path.getPathData().getItem(i-1).x;
-					var eq = Link.lineEq(m, segments.getItem(i));
+					cp.x = segments.getItem(i-1).x;
+					var eq = Link.lineEq(m, rootSegments.getItem(i));
 					cp.y = eq.a*cp.x + eq.b;
 				}
 				else if (v2.x == 0){
-					cp.x = path.getPathData().getItem(i+1).x;
-					var eq = Link.lineEq(m, segments.getItem(i));
+					cp.x = segments.getItem(i+1).x;
+					var eq = Link.lineEq(m, rootSegments.getItem(i));
 					cp.y = eq.a*cp.x + eq.b;
 				}
 				else if (v1.y == 0){
-					cp.y = path.getPathData().getItem(i-1).y;
+					cp.y = segments.getItem(i-1).y;
 					cp.x = p.x;
 				}
 				else if (v2.y == 0){
-					cp.y = path.getPathData().getItem(i+1).y;
+					cp.y = segments.getItem(i+1).y;
 					cp.x = p.x;
 				}
 			}
+			path.setAttribute("d", segments.path());
 		}
 	}
 };
@@ -335,8 +326,8 @@ Link.prototype.setLinkCenter = function()
 			var centralLink = this.g.relations[this.hash()][0];
 			var path = centralLink.svg.select(".e"+id).node();
 			var segments = path.getPathData();
-			if (segments.numberOfItems > 4){
-				c = segments.getItem(segments.numberOfItems-3);
+			if (segments.length > 4){
+				c = segments.getItem(segments.length-3);
 			}
 		}
 		pos[0] += c.x;
@@ -372,25 +363,28 @@ Link.prototype.addArrow = function(entityId)
 	//TODO: GENERAL SETTINGS
 	var dist = 10; // ArrowLength
 	var space = 3+this.width/2; // ArrowSpace
+	var path;
 	if (this.connectCount() == 2 && this.arrow != this.id){
-		var path = this.svg.select(".e"+this.source.id).node();
+		path = this.svg.select(".e"+this.source.id).node();
 	}
 	else{
-		var path = this.svg.select(".e"+entityId).node();
+		path = this.svg.select(".e"+entityId).node();
 	}
 
 	var segments = path.getPathData();
+	var point;
+	var v;
 	if (this.connectCount() == 2 && this.arrow == this.id){
-		var point = segments.getItem(segments.numberOfItems-1);
-		var v = Link.vector(segments.getItem(segments.numberOfItems-1), segments.getItem(segments.numberOfItems-2));
+		point = segments.getItem(segments.length-1);
+		v = Link.vector(segments.getItem(segments.length-1), segments.getItem(segments.length-2));
 	}
 	else if (this.arrow == this.id || (this.connectCount() == 2 && this.arrowOthers == true)){
-		var point = segments.getItem(segments.numberOfItems-2);
-		var v = Link.vector(segments.getItem(segments.numberOfItems-2), segments.getItem(segments.numberOfItems-3));
+		point = segments.getItem(segments.length-2);
+		v = Link.vector(segments.getItem(segments.length-2), segments.getItem(segments.length-3));
 	}
 	else{
-		var point = segments.getItem(1);
-		var v = Link.vector(segments.getItem(1), segments.getItem(2));
+		point = segments.getItem(1);
+		v = Link.vector(segments.getItem(1), segments.getItem(2));
 	}
 
 	var d = " M"+(point.x + dist*v.ux() + (space*v.uy()))+","+(point.y + dist*v.uy() - (space*v.ux()));
@@ -444,7 +438,7 @@ Link.getPathIndex = function(segments, point)
 {
 	var dist = [];
 	var get = {};
-	for (var i = 0; i < segments.numberOfItems-1; i++){
+	for (var i = 0; i < segments.length-1; i++){
 		var l = Link.getDistanceToSegment(segments.getItem(i), segments.getItem(i+1), point);
 		if (l || l == 0){
 			dist.push(l);

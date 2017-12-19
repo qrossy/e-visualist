@@ -52,7 +52,7 @@ Selector.prototype.update = function()
 				return;
 			}
 			var s = this.getPathData();
-			for (var i = 1; i <= (s.numberOfItems-2); i++){
+			for (var i = 1; i <= (s.length-2); i++){
 				var id = $(this).attr('class');
 				self.updateGrip(s.getItem(i), id+"_cp_"+i);
 			}
@@ -61,7 +61,7 @@ Selector.prototype.update = function()
     else if (this.elem.type == 3){
         this.elem.svg.select("path").each(function(){
             var s = this.getPathData();
-						for (var i = 1; i <= (s.numberOfItems-2); i+=2){
+						for (var i = 1; i <= (s.length-2); i+=2){
 								var id = $(this).attr('class');
 								self.updateGrip(s.getItem(i), id+"_cp_"+i);
 							}
