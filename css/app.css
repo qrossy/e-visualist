@@ -130,7 +130,7 @@ body
 
 .visualist_popup .ui-slider-range-min
 {
-	background:url("images/ui-bg_highlight-soft_75_cccccc_1x100.png") repeat-x scroll 50% 50% #444444 !important;
+	background:url("smoothness/images/ui-bg_highlight-soft_75_cccccc_1x100.png") repeat-x scroll 50% 50% #cccccc !important;
 }
 
 .visualist_popup input

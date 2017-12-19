@@ -2,7 +2,7 @@ Node.prototype.toString = function()
 {
 	var ret = "Node";
 	return ret;
-}
+};
 
 function Node(params)
 {
@@ -34,7 +34,7 @@ function Node(params)
 		data.set_width = this.set_width;				// Width of the Braces
 		return data;
 	}
-}
+};
 
 Node.prototype.redraw = function()
 {
@@ -96,7 +96,7 @@ Node.prototype.redraw = function()
 	}
 	this.redrawLabels();
 	this.selector.update();
-}
+};
 
 Node.prototype.create = function()
 {
@@ -157,7 +157,7 @@ Node.prototype.create = function()
 		if (theme) theme.remove();
 	}
 	this.createLabels();
-}
+};
 
 Node.prototype.setBox = function(box)
 {
@@ -166,17 +166,17 @@ Node.prototype.setBox = function(box)
 	this.w = box.width;
 	this.h = box.height;
 	this.redraw();
-}
+};
 
 
 Node.prototype.getCenter = function()
 {
-	var center = new Object();
+	var center = {};
 	var bb = this.bBox();
 	center.x = this.x+bb.width/2;
 	center.y = this.y+bb.height/2;
 	return center;
-}
+};
 
 Node.prototype.bBox = function(mode)
 {
@@ -198,6 +198,7 @@ Node.prototype.bBox = function(mode)
 		return;
 	}
 	var box = elm.getBBox();
+	if (!box){return;}
 	box.x = this.x ? this.x : 0;
 	box.y = this.y ? this.y : 0;
 	if (mode == 'all'){
@@ -212,4 +213,4 @@ Node.prototype.bBox = function(mode)
 	}
 
 	return box;
-}
+};
