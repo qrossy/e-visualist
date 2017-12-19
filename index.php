@@ -100,9 +100,9 @@
 			$('#graph_'+g.id).data('data', g);
 			g.init();
 			var actions = new Array();
-			var n = 2;
+			var n = 10;
 			for (var i = 0; i < n; i++){
-				actions.push([Action.createNode, {e:{x:Math.random()*500,y:Math.random()*300,icon:'img/person/male.png',shape:0}, g:g}]);
+				actions.push([Action.createNode, {e:{x:Math.random()*500,y:Math.random()*300,shape:2}, g:g}]);
 			}
 			// Math.floor(Math.random()*3)
 			var linkType = {0:'link', 1:'polygon',2:'box'};
