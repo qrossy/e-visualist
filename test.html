@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<body>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script>
+
+log = function(what)
+{
+	if (typeof console == 'undefined')
+		return;
+	if (console && console.log)
+		console.log(what);
+};
+
+var n = 10000;
+var graph = {'nodes':[],'links':[]};
+for (var i = 0; i < n; i++){
+	graph.nodes.push({});
+}
+
+for (var i = 0; i < n; i++){
+	var e1 = i;
+	var e2 = Math.floor(Math.random()*n);
+	var e3 = Math.floor(Math.random()*n);
+	graph.links.push({"source":e1,"target":e2});
+	<!-- graph.links.push({"source":e2,"target":e3}); -->
+}
+
+var width = 2000,
+    height = 2000;
+
+var canvas = d3.select("body").append("canvas")
+    .attr("width", width)
+    .attr("height", height);
+
+var force = d3.layout.force()
+    .size([width, height]);
+
+
+  var context = canvas.node().getContext("2d");
+
+  force
+      .nodes(graph.nodes)
+      .links(graph.links)
+      .on("tick", tick)
+      .start();
+
+  function tick() {
+    context.clearRect(0, 0, width, height);
+
+    // draw links
+    context.strokeStyle = "#ccc";
+    context.beginPath();
+    graph.links.forEach(function(d) {
+      context.moveTo(d.source.x, d.source.y);
+      context.lineTo(d.target.x, d.target.y);
+    });
+    context.stroke();
+
+    // draw nodes
+    context.fillStyle = "steelblue";
+    context.beginPath();
+    graph.nodes.forEach(function(d) {
+      context.moveTo(d.x, d.y);
+      context.arc(d.x, d.y, 4.5, 0, 2 * Math.PI);
+    });
+    context.fill();
+  }
+
+</script>
