@@ -142,7 +142,7 @@ graphEvent.prototype.up = function(event)
 
   if (this.newPos){
     this.prevPos = false;
-    if (Interface.addingLink && nodes.length > 1){
+    if (Interface.addingLink && this.nodes.length > 1){
       Interface.createRelation(event, this.nodes);
     }
   }
