@@ -54,7 +54,7 @@ Graph.prototype.init = function() {
       .attr("transform", "translate(0) scale(1)");
     this.main = this.canvas;
     this.context = this.canvas.node().getContext("2d");
-    this.canvas.eventHandler = new CanvasState(this);
+    this.canvas.eventHandler = new CanvasEvent(this);
 
   } else if (this.isSVG) {
     this.svg = d3.select("#graph_" + this.id)

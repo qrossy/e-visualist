@@ -584,11 +584,12 @@ Interface.prototype.createIconSelector = function() {
               var pos = g.canvas.eventHandler.getMouse(event);
               var icon = $(this).find('img').attr('src');
               g.createNode({
-                x: pos.x,
+                x: pos.x-20,
                 y: pos.y,
                 icon: icon,
                 shape: Interface.entityType
               });
+              g.canvas.
             }
           }
           if (g.isSVG) {

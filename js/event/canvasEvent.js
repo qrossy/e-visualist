@@ -3,7 +3,7 @@
  * Code taken at https://simonsarris.com/making-html5-canvas-useful/
  * @constructor
  */
-function CanvasState(graph) {
+function CanvasEvent(graph) {
   var self = this;
   this.verbose = false;
   this.graph = graph;
@@ -38,9 +38,8 @@ function CanvasState(graph) {
   // Up, down, and move are for dragging
   this.canvas.addEventListener('mousedown', function(e) {
     if (self.verbose) log('Down');
-    var mouse = self.getMouse(e);
-    var pos = self.screenToCanvas(mouse);
-    self.selection = self.getObjectAt(mouse);
+    var pos = self.getMouse(e);
+    self.selection = self.getObjectAt(pos);
     if (self.selection) {
       if (Interface.addingLink) {
         Interface.addingLink.from = self.selection;
@@ -53,8 +52,7 @@ function CanvasState(graph) {
   }, true);
   this.canvas.addEventListener('mousemove', function(e) {
     if (self.verbose) log('Move');
-    var mouse = self.getMouse(e);
-    var pos = self.screenToCanvas(mouse);
+    var pos = self.getMouse(e);
     if (self.dragging) {
       // We don't want to drag the object by its top-left corner, we want to drag it
       // from where we clicked. Thats why we saved the offset and use it here
@@ -69,14 +67,13 @@ function CanvasState(graph) {
       self.ctx.beginPath();
       var start = Interface.addingLink.from.getCenter();
       self.ctx.moveTo(start.x, start.y);
-      self.ctx.lineTo(mouse.x, mouse.y);
+      self.ctx.lineTo(pos.x, pos.y);
       self.ctx.stroke();
     }
   }, true);
   this.canvas.addEventListener('mouseup', function(e) {
     if (self.verbose) log('Up');
-    var mouse = self.getMouse(e);
-    var target = self.getObjectAt(mouse);
+    var target = self.getMouse(e);
     if (target && Interface.addingLink) {
       Interface.createRelation(e, [Interface.addingLink.from, target]);
     }
@@ -90,7 +87,7 @@ function CanvasState(graph) {
   }, true);
 }
 
-CanvasState.prototype.screenToCanvas = function(pos) {
+CanvasEvent.prototype.screenToCanvas = function(pos) {
   return pos.x ? {
     x: (pos.x - this.translate[0]) / this.scale,
     y: (pos.y - this.translate[0]) / this.scale
@@ -99,8 +96,7 @@ CanvasState.prototype.screenToCanvas = function(pos) {
   ];
 };
 
-CanvasState.prototype.getObjectAt = function(pos) {
-  pos = this.screenToCanvas(pos);
+CanvasEvent.prototype.getObjectAt = function(pos) {
   var shapes = this.graph.nodes;
   for (var id in shapes) {
     if (shapes[id].contains(pos.x, pos.y)) {
@@ -111,16 +107,16 @@ CanvasState.prototype.getObjectAt = function(pos) {
   return null;
 };
 
-CanvasState.prototype.clear = function() {
+CanvasEvent.prototype.clear = function() {
   this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 };
 
-CanvasState.prototype.draw = function() {
+CanvasEvent.prototype.draw = function() {
   var ctx = this.ctx;
   ctx.save();
   this.clear();
 
-  if (d3.event && !this.dragging) {
+  if (d3.event) {
     this.translate = d3.event.translate;
     this.scale = d3.event.scale;
   }
@@ -153,7 +149,7 @@ CanvasState.prototype.draw = function() {
 };
 // Creates an object with x and y defined, set to the mouse position relative to the state's canvas
 // If you wanna be super-correct this can be tricky, we have to worry about padding and borders
-CanvasState.prototype.getMouse = function(e) {
+CanvasEvent.prototype.getMouse = function(e) {
   var html = document.body.parentNode;
   this.htmlTop = html.offsetTop;
   this.htmlLeft = html.offsetLeft;
@@ -176,8 +172,8 @@ CanvasState.prototype.getMouse = function(e) {
   offsetX += this.stylePaddingLeft + this.styleBorderLeft + this.htmlLeft;
   offsetY += this.stylePaddingTop + this.styleBorderTop + this.htmlTop;
 
-  mx = e.pageX - offsetX;
-  my = e.pageY - offsetY;
+  mx = (e.pageX - this.translate[0] - offsetX) / this.scale ;
+  my = (e.pageY - this.translate[1]  - offsetY) / this.scale ;
 
   // We return a simple javascript object (a hash) with x and y defined
   return {
