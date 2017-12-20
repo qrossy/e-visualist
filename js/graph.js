@@ -14,7 +14,7 @@ Graph.nextId = 0;
 function Graph(params) {
   Graph.nextId++;
   if (!params) params = {};
-  params.id ? this.id = params.id : this.id = Graph.nextId;
+  this.id = params.id ? params.id : this.id = Graph.nextId;
 
   this.all = {};
   this.nodes = {};
@@ -24,25 +24,39 @@ function Graph(params) {
   this.snapToGrid = true;
   this.gridSize = 15;
   this.gridVisible = false;
-  this.renderer = 'svg' //'svg' or 'canvas'
+  this.renderer = 'canvas'; //'svg' or 'canvas'
+  this.isSVG = false;
+  this.isCanvas = true;
   this.svg = null;
   this.canvas = null;
   this.context = null; //canvas context to draw
   this.timeBarEventSource = new Timeline.DefaultEventSource();
 }
 
+Graph.prototype.setRenderer = function(type) {
+  if (type == 'svg') {
+    this.renderer = 'svg';
+    this.isSVG = true;
+    this.isCanvas = false;
+  } else if (type == 'canvas') {
+    this.renderer = 'canvas';
+    this.isSVG = false;
+    this.isCanvas = true;
+  }
+};
+
 Graph.prototype.init = function() {
   var self = this;
-  if (this.renderer == 'canvas') {
+  if (this.isCanvas) {
     this.canvas = d3.select("#graph_" + this.id)
-			.append("canvas")
-			.attr("class","canvas")
-			.attr("transform", "translate(0) scale(1)");
-		this.main = this.canvas;
+      .append("canvas")
+      .attr("class", "canvas")
+      .attr("transform", "translate(0) scale(1)");
+    this.main = this.canvas;
     this.context = this.canvas.node().getContext("2d");
-		this.canvas.eventHandler = new CanvasState(this);
+    this.canvas.eventHandler = new CanvasState(this);
 
-  } else if (this.renderer == 'svg') {
+  } else if (this.isSVG) {
     this.svg = d3.select("#graph_" + this.id)
       .append("svg:svg")
       .attr("class", "svg-droppable");
@@ -129,32 +143,33 @@ Graph.prototype.init = function() {
 };
 
 Graph.prototype.setSize = function(size) {
-  if (g.renderer == 'svg') {
-    g.svg.attr('width', size[0]);
-    g.svg.attr('height', size[1]);
+  if (this.isSVG) {
+    this.svg.attr('width', size[0]);
+    this.svg.attr('height', size[1]);
     var grid = g.svg.select(".grid");
     grid.attr('width', size[0]);
     grid.attr('height', size[1]);
   }
-  if (g.renderer == 'canvas') {
-    g.canvas.attr('width', size[0]);
-    g.canvas.attr('height', size[1]);
+  if (this.isCanvas) {
+    this.canvas.attr('width', size[0]);
+    this.canvas.attr('height', size[1]);
+    this.canvas.eventHandler.draw();
   }
 };
 
 Graph.prototype.translateX = function(val) {
-  val ? this.main.node().transform.baseVal.getItem(0).matrix.e = val : false;
+  this.main.node().transform.baseVal.getItem(0).matrix.e = val ? val : false;
   return this.main.node().transform.baseVal.getItem(0).matrix.e;
 };
 
 Graph.prototype.translateY = function(val) {
-  val ? this.main.node().transform.baseVal.getItem(0).matrix.f = val : false;
+  this.main.node().transform.baseVal.getItem(0).matrix.f = val ? val : false;
   return this.main.node().transform.baseVal.getItem(0).matrix.f;
 };
 
 Graph.prototype.scale = function(val) {
-  val ? this.main.node().transform.baseVal.getItem(0).matrix.a = val : false;
-  val ? this.main.node().transform.baseVal.getItem(0).matrix.d = val : false;
+  this.main.node().transform.baseVal.getItem(0).matrix.a = val ? val : false;
+  this.main.node().transform.baseVal.getItem(0).matrix.d = val ? val : false;
   return this.main.node().transform.baseVal.getItem(0).matrix.a;
 };
 
@@ -211,7 +226,7 @@ Graph.prototype.getLayoutInfo = function() {
       if (e.connectCount() > 2) {
         var clique = this.getClique(e);
         clique.forEach(function(v) {
-          links.push(v)
+          links.push(v);
         }, links);
       } else if (e.connectCount() == 2) {
         links.push(e);
@@ -344,12 +359,12 @@ Graph.prototype.getDateZones = function() {
       delta: map[dates[i + 1]].date.getTime() - map[dates[i]].date.getTime()
     };
     this.timeZones.push(zone);
-    this.zonesByEntity[e1] ? this.zonesByEntity[e1].start = zone : this.zonesByEntity[e1] = {
+    this.zonesByEntity[e1].start = this.zonesByEntity[e1] ? zone : {
       start: zone
-    }
-    this.zonesByEntity[e2] ? this.zonesByEntity[e2].end = zone : this.zonesByEntity[e2] = {
+    };
+    this.zonesByEntity[e2].end = this.zonesByEntity[e2] ? zone : {
       end: zone
-    }
+    };
   }
   return this.timeZones;
 };
@@ -405,25 +420,34 @@ Graph.prototype.selector = function() {
 };
 
 Graph.prototype.hideSelector = function() {
-  this.svg.select(".selectors").selectAll('.selector')
-    .attr("visibility", "hidden");
+
+  if (this.isSVG) {
+    this.svg.select(".selectors").selectAll('.selector')
+      .attr("visibility", "hidden");
+  }
 };
 
 Graph.prototype.hideHighlight = function() {
-  this.svg.select(".graph-highlight")
-    .attr('visibility', 'hidden');
+  if (this.isSVG) {
+    this.svg.select(".graph-highlight")
+      .attr('visibility', 'hidden');
+  }
 };
 
 Graph.prototype.hideAlignmentHelper = function() {
-  this.svg.select(".graph-alignmentH")
-    .attr('visibility', 'hidden');
-  this.svg.select(".graph-alignmentV")
-    .attr('visibility', 'hidden');
+  if (this.isSVG) {
+    this.svg.select(".graph-alignmentH")
+      .attr('visibility', 'hidden');
+    this.svg.select(".graph-alignmentV")
+      .attr('visibility', 'hidden');
+  }
 };
 
 Graph.prototype.hideGraphSelector = function() {
-  this.svg.select(".graph-selector")
-    .attr('visibility', 'hidden');
+  if (this.isSVG) {
+    this.svg.select(".graph-selector")
+      .attr('visibility', 'hidden');
+  }
 };
 
 Graph.prototype.hideHelpers = function() {
@@ -451,22 +475,20 @@ Graph.prototype.pos = function(x, y) {
 
 Graph.prototype.screenToCanvas = function(pos) {
   return pos.x ? {
-      x: (pos.x - this.translateX()) / this.scale(),
-      y: (pos.y - this.translateY()) / this.scale()
-    } :
-    [(pos[0] - this.translateX()) / this.scale(),
-      (pos[1] - this.translateY()) / this.scale()
-    ];
+    x: (pos.x - this.translateX()) / this.scale(),
+    y: (pos.y - this.translateY()) / this.scale()
+  } : [(pos[0] - this.translateX()) / this.scale(),
+    (pos[1] - this.translateY()) / this.scale()
+  ];
 };
 
 Graph.prototype.snap = function(pos) {
   return pos.x ? {
-      x: this.gridSize * Math.round(pos.x / this.gridSize),
-      y: this.gridSize * Math.round(pos.y / this.gridSize)
-    } :
-    [this.gridSize * Math.round(pos[0] / this.gridSize),
-      this.gridSize * Math.round(pos[1] / this.gridSize)
-    ];
+    x: this.gridSize * Math.round(pos.x / this.gridSize),
+    y: this.gridSize * Math.round(pos.y / this.gridSize)
+  } : [this.gridSize * Math.round(pos[0] / this.gridSize),
+    this.gridSize * Math.round(pos[1] / this.gridSize)
+  ];
 };
 
 Graph.prototype.visibleArea = function() {

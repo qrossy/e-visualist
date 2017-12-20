@@ -5,24 +5,23 @@ Node.prototype.toString = function() {
 
 function Node(params) {
   this.type = 0;
-  params.shape ? this.shape = params.shape : this.shape = 0;
-  params.icon ? this.icon = params.icon : this.icon = null;
-  params.w ? this.w = params.w : this.w = 40;
-  params.h ? this.h = params.h : this.h = 40;
-  params.set ? this.set = params.set : this.set = false;
-  params.theme ? this.theme = params.theme : this.theme = {
+  this.shape = params.shape ? params.shape : this.shape = 0;
+  this.icon = params.icon ? params.icon : this.icon = null;
+  this.w = params.w ? params.w : this.w = 40;
+  this.h = params.h ? params.h : this.h = 40;
+  this.set = params.set ? params.set : this.set = false;
+  this.theme = params.theme ? params.theme : this.theme = {
     draw: false,
     mostLeft: true,
     mostRight: true
   };
-  params.set_margin ? this.set_margin = params.set_margin : this.set_margin = 5;
-  params.set_width ? this.set_width = params.set_width : this.set_width = 15;
+  this.set_margin = params.set_margin ? params.set_margin : this.set_margin = 5;
+  this.set_width = params.set_width ? params.set_width : this.set_width = 15;
 
   params.labels = params.labels ? params.labels : [new Label({
     e: this,
     text: params.text
   })];
-
   this.parent = Entity;
   this.parent(params);
 
@@ -37,24 +36,34 @@ function Node(params) {
     data.set_margin = this.set_margin; // Margin between the Braces and the node
     data.set_width = this.set_width; // Width of the Braces
     return data;
-  }
-};
+  };
+}
 
 Node.prototype.redraw = function() {
-  if (this.g.renderer == 'canvas') {
+  if (this.g.isCanvas) {
     var context = this.g.context;
-    var img = new Image();
-    img.src = this.icon;
-    context.drawImage(img, this.x, this.y, this.w, this.h);
-    // context.strokeStyle = "#ccc";
-    // context.beginPath();
-    // context.moveTo(this.x, this.y);
-    // context.arc(this.x, this.y, 4.5, 0, 2 * Math.PI);
-    // context.fill();
-  } else if (this.g.renderer == 'svg') {
+    if (this.shape == 0) {
+      var img = new Image();
+      img.src = this.icon;
+      context.drawImage(img, this.x, this.y, this.w, this.h);
+    } else if (this.shape == 1) {
+      //TODO setRenderer for Box
+      context.fillStyle = this.color;
+      context.beginPath();
+      context.rect(this.x, this.y, this.w, this.h);
+      context.stroke();
+
+    } else if (this.shape == 2) {
+      //TODO setRenderer for Circle
+      context.fillStyle = this.color;
+      context.beginPath();
+      context.arc(this.x+this.w/2, this.y+this.h/2, this.w/2, 0, 2 * Math.PI);
+      context.stroke();
+    }
+  } else if (this.g.isSVG) {
     this.svg.attr("transform", "translate(" + this.x + "," + this.y + ")");
     if (this.shape == 0) {
-      this.w < this.h ? this.h = this.w : this.w = this.h;
+      this.h = this.w < this.h ? this.w : this.w = this.h;
       this.svg.select("image")
         .attr("xlink:href", this.icon)
         .attr("width", this.w + "px")
@@ -67,7 +76,7 @@ Node.prototype.redraw = function() {
         .attr("fill-opacity", 0)
         .attr("stroke", this.color);
     } else if (this.shape == 2) {
-      this.w < this.h ? this.h = this.w : this.w = this.h;
+      this.h = this.w < this.h ? this.w : this.w = this.h;
       var r = this.w < this.h ? this.w / 2 : this.h / 2;
       this.svg.select("circle")
         .attr("cx", r)
@@ -109,16 +118,17 @@ Node.prototype.redraw = function() {
         .attr('x2', maxX)
         .attr('y2', this.y + this.h / 2)
         .attr("stroke", this.color);
+        this.selector.update();
     }
-    this.redrawLabels();
-    this.selector.update();
   }
+  this.redrawLabels();
+
 };
 
 Node.prototype.create = function() {
-  if (this.g.renderer == 'canvas') {
+  if (this.g.isCanvas) {
 
-  } else if (this.g.renderer == 'svg') {
+  } else if (this.g.isSVG) {
     if (this.svg) {
       this.svg.remove();
     }
@@ -196,34 +206,43 @@ Node.prototype.getCenter = function() {
 };
 
 Node.prototype.bBox = function(mode) {
-  var elm;
-  if (mode == 'all') {
-    elm = this.svg.node();
-  } else if (this.shape == 0) {
-    elm = this.svg.select('image').node();
-  } else if (this.shape == 1) {
-    elm = this.svg.select('rect').node();
-  } else if (this.shape == 2) {
-    elm = this.svg.select('circle').node();
-  }
-  if (!elm) {
-    log(this.svg);
-    return;
-  }
-  var box = elm.getBBox();
-  if (!box) {
-    return;
-  }
-  box.x = this.x ? this.x : 0;
-  box.y = this.y ? this.y : 0;
-  if (mode == 'all') {
-    var off = $(elm).offset();
-    var pos = this.g.pos(off.left, off.top);
-    box.x = pos[0];
-    box.y = pos[1];
-  } else if (this.set && mode == 'link') {
-    box.x = (this.x - this.set_margin - this.set_width);
-    box.width += (this.set_margin * 2 + this.set_width * 2);
+  var box = null;
+  if (this.g.isSVG) {
+    var elm;
+    if (mode == 'all') {
+      elm = this.svg.node();
+    } else if (this.shape == 0) {
+      elm = this.svg.select('image').node();
+    } else if (this.shape == 1) {
+      elm = this.svg.select('rect').node();
+    } else if (this.shape == 2) {
+      elm = this.svg.select('circle').node();
+    }
+    if (!elm) {
+      log(this.svg);
+      return;
+    }
+    box = elm.getBBox();
+    if (!box) {
+      return;
+    }
+    box.x = this.x ? this.x : 0;
+    box.y = this.y ? this.y : 0;
+    if (mode == 'all') {
+      var off = $(elm).offset();
+      var pos = this.g.pos(off.left, off.top);
+      box.x = pos[0];
+      box.y = pos[1];
+    } else if (this.set && mode == 'link') {
+      box.x = (this.x - this.set_margin - this.set_width);
+      box.width += (this.set_margin * 2 + this.set_width * 2);
+    }
+  }else if (this.g.isCanvas) {
+    box = {};
+    box.x = this.x;
+    box.y = this.y;
+    box.width = this.w;
+    box.height = this.h;
   }
 
   return box;
@@ -233,6 +252,6 @@ Node.prototype.bBox = function(mode) {
 Node.prototype.contains = function(mx, my) {
   // All we have to do is make sure the Mouse X,Y fall in the area between
   // the shape's X and (X + Width) and its Y and (Y + Height)
-  return  (this.x <= mx) && (this.x + this.w >= mx) &&
-          (this.y <= my) && (this.y + this.h >= my);
-}
+  return (this.x <= mx) && (this.x + this.w >= mx) &&
+    (this.y <= my) && (this.y + this.h >= my);
+};

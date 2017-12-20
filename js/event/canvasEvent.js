@@ -4,7 +4,18 @@
  * @constructor
  */
 function CanvasState(graph) {
+  var self = this;
+  this.verbose = false;
+  this.graph = graph;
   this.canvas = graph.canvas.node();
+
+  this.scale = 1;
+  this.translate = [0, 0];
+  var graphZoom = function(event) {
+    self.clear();
+    self.draw();
+  };
+  graph.canvas.call(d3.behavior.zoom().on("zoom", graphZoom));
   this.ctx = this.canvas.getContext('2d');
   // This complicates things a little but but fixes mouse co-ordinate problems
   // when there's a border or padding. See getMouse for more detail
@@ -15,116 +26,138 @@ function CanvasState(graph) {
     this.styleBorderLeft = parseInt(document.defaultView.getComputedStyle(this.canvas, null)['borderLeftWidth'], 10) || 0;
     this.styleBorderTop = parseInt(document.defaultView.getComputedStyle(this.canvas, null)['borderTopWidth'], 10) || 0;
   }
-  // Some pages have fixed-position bars (like the stumbleupon bar) at the top or left of the page
-  // They will mess up mouse coordinates and this fixes that
-  var html = document.body.parentNode;
-  this.htmlTop = html.offsetTop;
-  this.htmlLeft = html.offsetLeft;
-  // **** Keep track of state! ****
-  this.valid = false; // when set to true, the canvas will redraw everything
-  this.shapes = graph.nodes; // the collection of things to be drawn
   this.dragging = false; // Keep track of when we are dragging
-  // the current selected object.
-  // In the future we could turn this into an array for multiple selection
   this.selection = null;
   this.dragoffx = 0; // See mousedown and mousemove events for explanation
   this.dragoffy = 0;
 
-  var myState = this;
   this.canvas.addEventListener('selectstart', function(e) {
     e.preventDefault();
     return false;
   }, false);
   // Up, down, and move are for dragging
   this.canvas.addEventListener('mousedown', function(e) {
-    var mouse = myState.getMouse(e);
-    var mx = mouse.x;
-    var my = mouse.y;
-    var shapes = myState.shapes;
-    for (var id in shapes) {
-      if (shapes[id].contains(mx, my)) {
-        var mySel = shapes[id];
-        // Keep track of where in the object we clicked
-        // so we can move it smoothly (see mousemove)
-        myState.dragoffx = mx - mySel.x;
-        myState.dragoffy = my - mySel.y;
-        myState.dragging = true;
-        myState.selection = mySel;
-        myState.valid = false;
-        return;
+    if (self.verbose) log('Down');
+    var mouse = self.getMouse(e);
+    var pos = self.screenToCanvas(mouse);
+    self.selection = self.getObjectAt(mouse);
+    if (self.selection) {
+      if (Interface.addingLink) {
+        Interface.addingLink.from = self.selection;
+      } else {
+        self.dragging = true;
+        self.dragoffx = pos.x - self.selection.x;
+        self.dragoffy = pos.y - self.selection.y;
       }
-    }
-    // havent returned means we have failed to select anything.
-    // If there was an object selected, we deselect it
-    if (myState.selection) {
-      myState.selection = null;
-      myState.valid = false; // Need to clear the old selection border
     }
   }, true);
   this.canvas.addEventListener('mousemove', function(e) {
-    if (myState.dragging) {
-      var mouse = myState.getMouse(e);
+    if (self.verbose) log('Move');
+    var mouse = self.getMouse(e);
+    var pos = self.screenToCanvas(mouse);
+    if (self.dragging) {
       // We don't want to drag the object by its top-left corner, we want to drag it
       // from where we clicked. Thats why we saved the offset and use it here
-      myState.selection.x = mouse.x - myState.dragoffx;
-      myState.selection.y = mouse.y - myState.dragoffy;
-      myState.valid = false; // Something's dragging so we must redraw
-      myState.draw();
+      self.selection.x = pos.x - self.dragoffx;
+      self.selection.y = pos.y - self.dragoffy;
+      self.draw();
+      e.stopPropagation();
+    } else if (Interface.addingLink && Interface.addingLink.from) {
+      // draw links
+      self.draw();
+      self.ctx.strokeStyle = "#ccc";
+      self.ctx.beginPath();
+      var start = Interface.addingLink.from.getCenter();
+      self.ctx.moveTo(start.x, start.y);
+      self.ctx.lineTo(mouse.x, mouse.y);
+      self.ctx.stroke();
     }
   }, true);
   this.canvas.addEventListener('mouseup', function(e) {
-    myState.dragging = false;
-    myState.draw();
+    if (self.verbose) log('Up');
+    var mouse = self.getMouse(e);
+    var target = self.getObjectAt(mouse);
+    if (target && Interface.addingLink) {
+      Interface.createRelation(e, [Interface.addingLink.from, target]);
+    }
+    Interface.addingLink = false;
+    self.draw();
+    self.dragging = false;
   }, true);
   // double click for making new shapes
   this.canvas.addEventListener('dblclick', function(e) {
-    var mouse = myState.getMouse(e);
-    // myState.addShape(new Shape(mouse.x - 10, mouse.y - 10, 20, 20, 'rgba(0,255,0,.6)'));
+    var mouse = self.getMouse(e);
   }, true);
+}
 
-  // **** Options! ****
+CanvasState.prototype.screenToCanvas = function(pos) {
+  return pos.x ? {
+    x: (pos.x - this.translate[0]) / this.scale,
+    y: (pos.y - this.translate[0]) / this.scale
+  } : [(pos[0] - this.translate[1]) / this.scale,
+    (pos[1] - this.translate[1]) / this.scale
+  ];
+};
 
-  this.selectionColor = '#CCC';
-  this.selectionWidth = 2;
+CanvasState.prototype.getObjectAt = function(pos) {
+  pos = this.screenToCanvas(pos);
+  var shapes = this.graph.nodes;
+  for (var id in shapes) {
+    if (shapes[id].contains(pos.x, pos.y)) {
+      var mySel = shapes[id];
+      return mySel;
+    }
+  }
+  return null;
 };
 
 CanvasState.prototype.clear = function() {
   this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 };
 
-// While draw is called as often as the INTERVAL variable demands,
-// It only ever does something if the canvas gets invalidated by our code
 CanvasState.prototype.draw = function() {
-  // if our state is invalid, redraw and validate!
-  if (!this.valid) {
-    var ctx = this.ctx;
-    var shapes = this.shapes;
-    this.clear();
-    for (var i in shapes) {
-      var shape = shapes[i];
+  var ctx = this.ctx;
+  ctx.save();
+  this.clear();
+
+  if (d3.event && !this.dragging) {
+    this.translate = d3.event.translate;
+    this.scale = d3.event.scale;
+  }
+  ctx.translate(this.translate[0], this.translate[1]);
+  ctx.scale(this.scale, this.scale);
+  var nodes = this.graph.nodes;
+  for (var n in nodes) {
+    var node = nodes[n];
+    // We can skip the drawing of elements that have moved off the screen:
+    // if (node.x > this.width || node.y > this.height ||
+    //   node.x + node.w < 0 || node.y + node.h < 0) continue;
+    node.redraw();
+  }
+  var relations = this.graph.relations;
+  for (var r in relations) {
+    var group = relations[r];
+    for (var g in group) {
+      var rel = group[g];
       // We can skip the drawing of elements that have moved off the screen:
       // if (shape.x > this.width || shape.y > this.height ||
       //   shape.x + shape.w < 0 || shape.y + shape.h < 0) continue;
-      shape.redraw();
+      rel.redraw();
     }
-
-    // draw selection
-    // right now this is just a stroke along the edge of the selected Shape
-    if (this.selection != null) {
-      ctx.strokeStyle = this.selectionColor;
-      ctx.lineWidth = this.selectionWidth;
-      var mySel = this.selection;
-      ctx.strokeRect(mySel.x, mySel.y, mySel.w, mySel.h);
-    }
-
-    // ** Add stuff you want drawn on top all the time here **
-
-    this.valid = true;
   }
+  if (this.selection != null) {
+    this.selection.selector.update();
+
+  }
+  ctx.restore();
 };
 // Creates an object with x and y defined, set to the mouse position relative to the state's canvas
 // If you wanna be super-correct this can be tricky, we have to worry about padding and borders
 CanvasState.prototype.getMouse = function(e) {
+  var html = document.body.parentNode;
+  this.htmlTop = html.offsetTop;
+  this.htmlLeft = html.offsetLeft;
+
   var element = this.canvas,
     offsetX = 0,
     offsetY = 0,

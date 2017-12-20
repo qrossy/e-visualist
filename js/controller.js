@@ -31,7 +31,7 @@ Controller.prototype.addAction = function(action, data)
 		n = n.substr('function '.length);
 		n = n.substr(0, n.indexOf('('));
 	}
-	
+
 	this.actionStack.push({func:action, d:data, name:n});
 }
 

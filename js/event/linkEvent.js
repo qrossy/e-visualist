@@ -29,7 +29,7 @@ linkEvent.prototype.down = function(event)
 		var path;
 		var point = this.g.pos(event.pageX, event.pageY);
 		if (this.e.connectCount() == 2 && this.e.arrow == this.e.id){
-			path = this.e.getMainPath().node();
+			path = this.e.svg.select(".mainPath").node();
 		}
 		else{
 			id = $(event.target).attr('class').split('e')[1];

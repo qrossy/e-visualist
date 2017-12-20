@@ -474,34 +474,32 @@ Interface.prototype.updateHistory = function(force) {
   if (!$('.visualist-history').is(":visible") && !force) {
     return;
   }
-  if (g.renderer == 'svg') {
-    g.hideHelpers();
-    var hist = g.history();
-    if (hist[1] == 0) {
-      $('a[href="#undo"]').button('option', 'disabled', true);
-    } else {
-      $('a[href="#undo"]').button('option', 'disabled', false);
-    }
+  g.hideHelpers();
+  var hist = g.history();
+  if (hist[1] == 0) {
+    $('a[href="#undo"]').button('option', 'disabled', true);
+  } else {
+    $('a[href="#undo"]').button('option', 'disabled', false);
+  }
 
-    if (hist[1] == hist[0].length - 1) {
-      $('a[href="#redo"]').button('option', 'disabled', true);
-    } else {
-      $('a[href="#redo"]').button('option', 'disabled', false);
-    }
+  if (hist[1] == hist[0].length - 1) {
+    $('a[href="#redo"]').button('option', 'disabled', true);
+  } else {
+    $('a[href="#redo"]').button('option', 'disabled', false);
+  }
 
-    $('.visualist-history').html('');
-    for (var id in hist[0]) {
-      var $step = $('<tr id=' + id + '><td>' + hist[0][id].name + '</td></tr>');
-      if (id == hist[1]) {
-        $step.css('font-weight', 'bold');
-      } else if (id > hist[1]) {
-        $step.css('color', 'grey');
-      }
-      $step.bind("click", function(e) {
-        g.stepTo(parseInt($(this).attr('id')));
-      });
-      $('.visualist-history').prepend($step);
+  $('.visualist-history').html('');
+  for (var id in hist[0]) {
+    var $step = $('<tr id=' + id + '><td>' + hist[0][id].name + '</td></tr>');
+    if (id == hist[1]) {
+      $step.css('font-weight', 'bold');
+    } else if (id > hist[1]) {
+      $step.css('color', 'grey');
     }
+    $step.bind("click", function(e) {
+      g.stepTo(parseInt($(this).attr('id')));
+    });
+    $('.visualist-history').prepend($step);
   }
 };
 
@@ -578,11 +576,11 @@ Interface.prototype.createIconSelector = function() {
           ui.helper.remove();
           var el = document.elementFromPoint(event.pageX, event.pageY);
           var g = Interface.get().currentGraph;
-          if (g.renderer == 'canvas'){
+          if (g.isCanvas) {
             var context = g.canvas;
             $el = $(el, context);
             //check that drop position is within the canvas
-            if ($el.attr('class') == 'canvas'){
+            if ($el.attr('class') == 'canvas') {
               var pos = g.canvas.eventHandler.getMouse(event);
               var icon = $(this).find('img').attr('src');
               g.createNode({
@@ -593,7 +591,7 @@ Interface.prototype.createIconSelector = function() {
               });
             }
           }
-          if (g.renderer == 'svg'){
+          if (g.isSVG) {
             var context = g.svg;
             $el = $(el, context);
             if ($el.attr('class') == 'svg-droppable' || $el.attr('class') == 'grid') {
@@ -664,8 +662,9 @@ Interface.createRelation = function(event, nodes) {
     color: Interface.addingLink.color
   });
   if (Interface.addingLink.type == 'link') {
-    event.path = r.svg.select(r.source ? '.e' + r.source.id : 'path').node();
-    r.eventHandler.creationPopup(event);
+    //TODO Rredo popup for links
+    // event.path = r.svg.select(r.source ? '.e' + r.source.id : 'path').node();
+    // r.eventHandler.creationPopup(event);
   }
   $(".visualist_linkSelector_type").find('input').each(function() {
     $(this).attr('checked', false);

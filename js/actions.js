@@ -18,6 +18,7 @@ var undo = false;
 
 Action.createNode = function CreateNode(params, undo) {
   if (!undo) {
+    //TODO Evaluate, why this test is required !
     if (params.e.toString() == '[object Object]') {
       var node = new Node(params.e);
       params.e = node;
@@ -42,12 +43,13 @@ Action.createNode = function CreateNode(params, undo) {
 Action.createRelation = function CreateRelation(params, undo) {
   if (!undo) {
     if (!params.e) {
+      var entity;
       if (params.type == 'link') {
-        var entity = new Link(params.prop);
+        entity = new Link(params.prop);
       } else if (params.type == 'box') {
-        var entity = new Box(params.prop);
+        entity = new Box(params.prop);
       } else if (params.type == 'polygon') {
-        var entity = new Polygon(params.prop);
+        entity = new Polygon(params.prop);
       }
       if (params.linked.length == 2) {
         entity.source = typeof(params.linked[0]) == 'number' ? params.g.get(params.linked[0]) : params.linked[0];
@@ -78,8 +80,8 @@ Action.createRelation = function CreateRelation(params, undo) {
     if (params.type == 'link') {
       delete params.g.relations[params.e.hash()][params.e.space];
     }
-    for (var i in params.linked) {
-      params.e.removeConnect(params.linked[i]);
+    for (var l in params.linked) {
+      params.e.removeConnect(params.linked[l]);
     }
   }
   return params.e;
@@ -94,11 +96,11 @@ Action.createCorner = function CreateCorner(params, undo) {
   var path;
   var links = params.g.relations[params.e.hash()];
   if (params.e.connectCount() == 2) {
-    path = links[0].getMainPath();
+    path = links[0].svg.select(".mainPath");
   } else {
     path = links[0].svg.select(".e" + params.id);
   }
-  var segments = path.node().getPathData();
+  var segments = path.node().svg.select(".mainPath").node().getPathData();
   if (!undo) {
     var prev = segments.getItem(params.index - 1);
     var next = segments.getItem(params.index);
@@ -139,7 +141,7 @@ Action.removeCorner = function RemoveCorner(params, undo) {
   var path;
   var links = params.g.relations[params.e.hash()];
   if (params.e.connectCount() == 2) {
-    path = links[0].getMainPath();
+    path = links[0].svg.select(".mainPath").node().getPathData();
   } else {
     path = links[0].svg.select("." + params.id);
   }
@@ -170,22 +172,21 @@ Action.add = function Add(params, undo) {
   if (!undo) {
     params.e.g = params.g;
     params.e.create();
-    //TODO handle selector for canvas
-    if (params.g.renderer == 'svg'){
-      params.e.selector = new Selector(params.g, params.e);
-    }
+    params.e.selector = new Selector(params.g, params.e);
     params.g.all[params.e.id] = params.e;
-    params.e.redraw();
+    if (params.g.isSVG) {
+      params.e.redraw();
+    }
     if (params.e.startDateTime) {
       params.e.addToTimebar();
     }
   } else {
-    params.e.svg.remove();
-    if (params.g.renderer == 'svg'){
+    if (params.g.isSVG) {
+      params.e.svg.remove();
       params.e.selector.svg.remove();
+      delete params.e.eventHandler;
     }
     delete params.g.all[params.e.id];
-    delete params.e.eventHandler;
     for (var i in params.e.connect) {
       delete params.e.connect[i].connect[params.e.id];
     }
@@ -276,7 +277,7 @@ Action.removeLink = function RemoveLink(params, undo) {
         links[l.space] = l;
         if (l.space == 0) {
           l.addMainPath();
-          l.setMainPath(params.e.getMainPath().attr('d'));
+          l.setMainPath(params.e.mainPath);
         }
         l.redraw();
       }

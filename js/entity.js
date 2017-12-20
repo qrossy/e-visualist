@@ -15,21 +15,17 @@ Entity.nextId = 0;
  */
 function Entity(params) {
   Entity.nextId++;
-  if (!params) params = new Object();
-  params.id ? this.id = params.id : this.id = Entity.nextId;
-  this.id > Entity.nextId ? Entity.nextId = (this.id + 1) : false;
-
-  params.connect ? this.connect = params.connect : this.connect = new Object();
-  params.x ? this.x = params.x : this.x = 0;
-  params.y ? this.y = params.y : this.y = 0;
-  params.color ? this.color = params.color : this.color = '#000000';
-  params.g ? this.g = params.g : this.g = null;
-  params.startDateTime ? this.startDateTime = params.startDateTime : this.startDateTime = null;
-  params.endDateTime ? this.endDateTime = params.endDateTime : this.endDateTime = null;
-  params.ctrlDateTime ? this.ctrlDateTime = params.ctrlDateTime : this.ctrlDateTime = 0;
-  params.labels ? this.labels = params.labels : this.labels = null; //[new Label({e:this})]
-  delete params;
-
+  if (!params) params = {};
+  this.id = params.id ? params.id : this.id = Entity.nextId;
+  this.connect = params.connect ? params.connect : this.connect = {};
+  this.x = params.x ? params.x : this.x = 0;
+  this.y = params.y ? params.y : this.y = 0;
+  this.color = params.color ? params.color : this.color = '#000000';
+  this.g = params.g ? params.g : this.g = null;
+  this.startDateTime = params.startDateTime ? params.startDateTime : this.startDateTime = null;
+  this.endDateTime = params.endDateTime ? params.endDateTime : this.endDateTime = null;
+  this.ctrlDateTime = params.ctrlDateTime ? params.ctrlDateTime : this.ctrlDateTime = 0;
+  this.labels = params.labels ? params.labels : this.labels = null; //[new Label({e:this})]
   this.getMainData = function() {
     return {
       id: this.id, // Autoid
@@ -43,8 +39,7 @@ function Entity(params) {
       ctrlDateTime: this.ctrlDateTime, // 0 = free, 1 = Between move, 2 = Controlled
       labels: this.labelInfo(), // List of textLabels
     };
-  }
-
+  };
   this.setData = function(data, g) {
     this.g = g ? g : this.g;
     this.g.all[this.id] = this;
@@ -62,7 +57,7 @@ function Entity(params) {
         this[id] = data[id];
       }
     }
-  }
+  };
 
   this.labelInfo = function() {
     if (!this.labels) {
@@ -73,17 +68,17 @@ function Entity(params) {
       infos.push(this.labels[l].getData());
     }
     return infos;
-  }
+  };
 
   this.addConnect = function(entity) {
     this.connect[entity.id] = entity;
     entity.connect[this.id] = this;
-  }
+  };
 
   this.removeConnect = function(entity) {
     delete this.connect[entity.id];
     delete entity.connect[this.id];
-  }
+  };
 
   this.updateConnect = function() {
     //log('updateConnect for '+this.id);
@@ -91,11 +86,11 @@ function Entity(params) {
       this.connect[id].connect[this.id] = this;
       this.connect[id].redraw();
     }
-  }
+  };
 
   this.connectCount = function() {
     return Object.keys(this.connect).length;
-  }
+  };
 
   this.connectRefs = function() {
     var refs = [];
@@ -103,7 +98,7 @@ function Entity(params) {
       refs.push(id);
     }
     return refs;
-  }
+  };
   /**
    * Get connected Entities
    * Recursive function
@@ -123,18 +118,18 @@ function Entity(params) {
       }
     }
     return connected;
-  }
+  };
 
   this.getPosition = function() {
     return {
       x: this.x,
       y: this.y
     };
-  }
+  };
 
   this.hash = function() {
     return Entity.hash(this.connect);
-  }
+  };
 
   this.addToTimebar = function() {
     var evt = new Timeline.DefaultEventSource.Event({
@@ -156,31 +151,31 @@ function Entity(params) {
       }
       this.redraw();
     }
-  }
+  };
 
   this.redrawLabels = function() {
     for (var i in this.labels) {
       this.labels[i].redraw();
     }
-  }
+  };
 
   this.createLabels = function() {
     for (var i in this.labels) {
       this.labels[i].create();
     }
-  }
+  };
 }
 
 Entity.hash = function(nodes) {
   var a = [];
   for (var id in nodes) {
-    var id = typeof(nodes[id]) == 'number' ? nodes[id] : nodes[id].id;
+    id = typeof(nodes[id]) == 'number' ? nodes[id] : nodes[id].id;
     a.push(id);
   }
   a.sort();
   var hash = '';
-  for (var id in a) {
-    hash += 'e' + a[id]
+  for (id in a) {
+    hash += 'e' + a[id];
   }
   return hash;
-}
+};
