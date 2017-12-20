@@ -92,32 +92,46 @@ Node.prototype.redraw = function() {
         .attr("fill-opacity", 0)
         .attr("stroke", this.color);
     }
+  }
 
-    if (this.set) {
-      var m = this.set_margin;
-      var w = this.set_width;
-      var path = "M-" + m + ",0 Q-" + (m + w / 2) + ",0 -" + (m + w / 2) + "," + this.h / 4 + " T-" + (m + w) + "," + this.h / 2 + " ";
-      path += "M-" + m + "," + this.h + " Q-" + (m + w / 2) + "," + this.h + " -" + (m + w / 2) + "," + this.h * 3 / 4 + " T-" + (m + w) + "," + this.h / 2 + "";
-      path += "M" + (this.w + m) + ",0 Q" + (this.w + m + w / 2) + ",0 " + (this.w + m + w / 2) + "," + this.h / 4 + " T" + (this.w + m + w) + "," + this.h / 2 + " ";
-      path += "M" + (this.w + m) + "," + this.h + " Q" + (this.w + m + w / 2) + "," + this.h + " " + (this.w + m + w / 2) + "," + this.h * 3 / 4 + " T" + (this.w + m + w) + "," + this.h / 2 + " ";
+  if (this.set) {
+    var m = this.set_margin;
+    var w = this.set_width;
+    var path = "M-" + m + ",0 Q-" + (m + w / 2) + ",0 -" + (m + w / 2) + "," + this.h / 4 + " T-" + (m + w) + "," + this.h / 2 + " ";
+    path += "M-" + m + "," + this.h + " Q-" + (m + w / 2) + "," + this.h + " -" + (m + w / 2) + "," + this.h * 3 / 4 + " T-" + (m + w) + "," + this.h / 2 + "";
+    path += "M" + (this.w + m) + ",0 Q" + (this.w + m + w / 2) + ",0 " + (this.w + m + w / 2) + "," + this.h / 4 + " T" + (this.w + m + w) + "," + this.h / 2 + " ";
+    path += "M" + (this.w + m) + "," + this.h + " Q" + (this.w + m + w / 2) + "," + this.h + " " + (this.w + m + w / 2) + "," + this.h * 3 / 4 + " T" + (this.w + m + w) + "," + this.h / 2 + " ";
+    if (this.g.isCanvas) {
+      var ctx = this.g.context;
+      ctx.beginPath();
+      ctx.translate(this.x, this.y);
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = this.width;
+      ctx.stroke(new Path2D(path));
+      ctx.translate(-this.x, -this.y);
+    } else if (this.g.isSVG) {
       this.svg.select(".set")
         .attr('d', path)
         .attr("stroke", this.color);
     }
+  }
 
-    if (this.theme.draw) {
-      var band = Interface.timebar.getBand(0);
-      var minX = this.x + this.w;
-      var maxX = this.x;
-      for (var id in this.connect) {
-        var x = this.connect[id].x;
-        if (x < minX) {
-          minX = x;
-        }
-        if (x > maxX) {
-          maxX = x;
-        }
+  if (this.theme.draw) {
+    var band = Interface.timebar.getBand(0);
+    var minX = this.x + this.w;
+    var maxX = this.x;
+    for (var id in this.connect) {
+      var x = this.connect[id].x;
+      if (x < minX) {
+        minX = x;
       }
+      if (x > maxX) {
+        maxX = x;
+      }
+    }
+    if (this.g.isCanvas) {
+      //TODO handle theme line
+    } else if (this.g.isSVG) {
       this.g.svg.select(".theme" + this.id)
         .attr('x1', minX)
         .attr('y1', this.y + this.h / 2)
@@ -133,7 +147,8 @@ Node.prototype.redraw = function() {
 
 Node.prototype.create = function() {
   if (this.g.isCanvas) {
-
+    this.set_margin = 0;
+    this.set_width = 10;
   } else if (this.g.isSVG) {
     if (this.svg) {
       this.svg.remove();

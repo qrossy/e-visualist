@@ -49,9 +49,12 @@ function CanvasEvent(graph) {
         self.dragoffx = pos.x - self.clicked.x;
         self.dragoffy = pos.y - self.clicked.y;
       }
+    }else{
+      var div = Interface.get().popupDiv;
+      $(div).fadeOut();
     }
-    var div = Interface.get().popupDiv;
-    $(div).fadeOut();
+    self.draw();
+
   }, true);
   this.canvas.addEventListener('mousemove', function(e) {
     if (self.verbose) log('Move');
@@ -106,6 +109,7 @@ CanvasEvent.prototype.screenToCanvas = function(pos) {
 };
 
 CanvasEvent.prototype.getObjectAt = function(pos) {
+  //TODO optimize with selection on visible items and a treemap ?
   var shapes = this.graph.nodes;
   for (var id in shapes) {
     if (shapes[id].contains(pos.x, pos.y)) {
