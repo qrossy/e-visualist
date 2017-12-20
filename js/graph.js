@@ -30,7 +30,9 @@ function Graph(params) {
   this.svg = null;
   this.canvas = null;
   this.context = null; //canvas context to draw
+  this.images = {}; //store images for canvas renderers
   this.timeBarEventSource = new Timeline.DefaultEventSource();
+
 }
 
 Graph.prototype.setRenderer = function(type) {

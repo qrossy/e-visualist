@@ -44,21 +44,26 @@ Node.prototype.redraw = function() {
     var context = this.g.context;
     if (this.shape == 0) {
       //TODO place imge elsewhere to create object once ?
-      var img = new Image();
-      img.src = this.icon;
+      var img;
+      if (this.icon in this.g.images) {
+        img = this.g.images[this.icon];
+      } else {
+        img = new Image();
+        img.src = this.icon;
+      }
       context.drawImage(img, this.x, this.y, this.w, this.h);
     } else if (this.shape == 1) {
       //TODO setRenderer for Box
-      context.fillStyle = this.color;
       context.beginPath();
+      context.strokeStyle = this.color;
       context.rect(this.x, this.y, this.w, this.h);
       context.stroke();
 
     } else if (this.shape == 2) {
       //TODO setRenderer for Circle
-      context.fillStyle = this.color;
       context.beginPath();
-      context.arc(this.x+this.w/2, this.y+this.h/2, this.w/2, 0, 2 * Math.PI);
+      context.strokeStyle = this.color;
+      context.arc(this.x + this.w / 2, this.y + this.h / 2, this.w / 2, 0, 2 * Math.PI);
       context.stroke();
     }
   } else if (this.g.isSVG) {
@@ -119,7 +124,7 @@ Node.prototype.redraw = function() {
         .attr('x2', maxX)
         .attr('y2', this.y + this.h / 2)
         .attr("stroke", this.color);
-        this.selector.update();
+      this.selector.update();
     }
   }
   this.redrawLabels();
@@ -238,7 +243,7 @@ Node.prototype.bBox = function(mode) {
       box.x = (this.x - this.set_margin - this.set_width);
       box.width += (this.set_margin * 2 + this.set_width * 2);
     }
-  }else if (this.g.isCanvas) {
+  } else if (this.g.isCanvas) {
     box = {};
     box.x = this.x;
     box.y = this.y;

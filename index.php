@@ -101,7 +101,6 @@
 			$('#graph_'+g.id).data('data', g);
 			g.setRenderer('canvas'); // 'svg' or 'canvas'
 			g.init();
-
 			var actions = new Array();
 			var n = 10;
 			for (var i = 0; i < n; i++){
@@ -110,10 +109,14 @@
 			Math.floor(Math.random()*3)
 			var linkType = {0:'link', 1:'polygon',2:'box'};
 			for (var i = 0; i < n; i++){
-				var e1 = Math.floor(Math.random()*n)+1;
+				var e1 = i+1;
 				var e2 = Math.floor(Math.random()*n)+1;
+				var e3 = Math.floor(Math.random()*n)+1;
 				if (e1 != e2){
 					actions.push([Action.createRelation, {type:linkType[0], linked:[e1, e2], prop:{}, g:g}]);
+				}
+				if (e1 != e3){
+					actions.push([Action.createRelation, {type:linkType[0], linked:[e1, e3], prop:{}, g:g}]);
 				}
 			}
 			g.ctrl.addBatch(actions, 'RandomGraph');

@@ -43,45 +43,48 @@ function Link(params) {
 }
 
 Link.prototype.create = function() {
-  if (this.g.isCanvas) {
-
-  } else if (this.g.isSVG) {
-    if (this.svg) {
-      this.svg.remove();
-    }
+  if (this.svg) {
+    this.svg.remove();
+  }
+  if (this.g.isSVG){
     this.svg = this.g.svg.select(".links").append("svg:g");
-    this.svg
-      .attr("class", "link")
-      .attr("id", this.id);
-
     this.eventHandler = new linkEvent(this.g, this);
+  }
+  else if (this.g.isCanvas){
+    //we create detached element used to compute calculation with SVGPath
+    //but we don't draw it !
+    this.svg = d3.select("body").append("svg").remove();
+  }
 
-    if (this.connectCount() == 2) {
-      var clink = this.g.relations[this.hash()][0];
-      if (clink.source != this.source) {
-        this.source = clink.source;
-        this.target = clink.target;
-      }
-      if (this.space == 0) {
-        this.addMainPath();
-      }
-      this.setMainPath(this.mainPath);
-    }
+  this.svg
+    .attr("class", "link")
+    .attr("id", this.id);
 
-    for (var i in this.connect) {
-      var p = this.svg.append("svg:path")
-        .attr("class", "e" + i)
-        .attr("fill-opacity", 0)
-        .attr("pointer-events", "none")
-        .attr("stroke-linejoin", "round");
-      //.attr("stroke-linecap", "round"); //	butt | round | square | inherit
-      this.svg.append("svg:path")
-        .attr("class", "click_e" + i) //last letter needs to be "e", split("e") in linkEvent
-        .attr("stroke-width", 5)
-        .attr("fill-opacity", 0)
-        .attr("pointer-events", "stroke")
-        .attr("visibility", "hidden");
+  if (this.connectCount() == 2) {
+    var clink = this.g.relations[this.hash()][0];
+    if (clink.source != this.source) {
+      this.source = clink.source;
+      this.target = clink.target;
     }
+    if (this.space == 0) {
+      this.addMainPath();
+    }
+    this.setMainPath(this.mainPath);
+  }
+
+  for (var i in this.connect) {
+    var p = this.svg.append("svg:path")
+      .attr("class", "e" + i)
+      .attr("fill-opacity", 0)
+      .attr("pointer-events", "none")
+      .attr("stroke-linejoin", "round");
+    //.attr("stroke-linecap", "round"); //	butt | round | square | inherit
+    this.svg.append("svg:path")
+      .attr("class", "click_e" + i) //last letter needs to be "e", split("e") in linkEvent
+      .attr("stroke-width", 5)
+      .attr("fill-opacity", 0)
+      .attr("pointer-events", "stroke")
+      .attr("visibility", "hidden");
   }
   this.createLabels();
 };
@@ -112,89 +115,55 @@ Link.prototype.drawTheme = function() {
 };
 
 Link.prototype.drawSLink = function() {
-  var segments;
+  var path = this.svg.select('.e' + this.source.id);
   var start;
   var end;
-  if (this.g.isCanvas) {
+  path.attr("stroke-width", this.width)
+    .attr("stroke-dasharray", this.dasharray)
+    .attr("stroke", this.color);
+
+  this.svg.select('.e' + this.target.id).attr("visibility", "hidden");
+  if (this.space == 0) {
+    var segments = this.getMainPath().node().getPathData();
+    if (this.getMainPath().attr("d") && segments.length > 4) {
+      start = Link.getIntersection(this.source, segments.getItem(2));
+      if (start.x && start.y) {
+        Link.applyCoord(start, segments.getItem(0));
+        Link.applyCoord(start, segments.getItem(1));
+      }
+      end = Link.getIntersection(this.target, segments.getItem(segments.length - 3));
+      if (end.x && end.y) {
+        Link.applyCoord(end, segments.getItem(segments.length - 1));
+        Link.applyCoord(end, segments.getItem(segments.length - 2));
+      }
+      this.setMainPath(segments.path());
+    } else {
+      start = Link.getIntersection(this.source, this.target.getCenter());
+      end = Link.getIntersection(this.target, this.source.getCenter());
+      if (start.x && start.y && end.x && end.y) {
+        this.setMainPath("M" + start.x + "," + start.y + " L" + start.x + "," + start.y +
+          " L" + end.x + "," + end.y + " L" + end.x + "," + end.y);
+      } else {
+        return;
+      }
+    }
+    path.attr("d", this.getMainPath().attr("d"));
+  } else {
+    path.attr("d", this.getRootMainPath().attr('d'));
+  }
+  this.updateSpacers(path.node(), '.e' + this.source.id);
+  this.setMainPath(path.attr('d'));
+  this.svg.select(".click_e" + this.source.id).attr("d", path.attr("d"));
+  if (this.g.isCanvas){
     var ctx = this.g.context;
     ctx.strokeStyle = this.color;
     ctx.lineWidth = this.width;
-    if (this.space == 0) {
-      segments = new Path2D(this.mainPath);
-      if (this.mainPath && segments.length > 4) {
-        start = Link.getIntersection(this.source, segments.getItem(2));
-        if (start.x && start.y) {
-          Link.applyCoord(start, segments.getItem(0));
-          Link.applyCoord(start, segments.getItem(1));
-        }
-        end = Link.getIntersection(this.target, segments.getItem(segments.length - 3));
-        if (end.x && end.y) {
-          Link.applyCoord(end, segments.getItem(segments.length - 1));
-          Link.applyCoord(end, segments.getItem(segments.length - 2));
-        }
-        this.setMainPath(segments.path());
-      } else {
-        start = Link.getIntersection(this.source, this.target.getCenter());
-        end = Link.getIntersection(this.target, this.source.getCenter());
-        if (start.x && start.y && end.x && end.y) {
-          this.setMainPath("M" + start.x + "," + start.y + " L" + start.x + "," + start.y +
-            " L" + end.x + "," + end.y + " L" + end.x + "," + end.y);
-        } else {
-          return;
-        }
-      }
-      segments = new Path2D(this.mainPath);
-      ctx.stroke(segments);
-    } else {
-      segments = new Path2D(this.getRootMainPath());
-      ctx.stroke(segments);
-    }
-    // this.updateSpacers(path.node(), '.e' + this.source.id);
-    // this.setMainPath(path.attr('d'));
-    // this.svg.select(".click_e" + this.source.id).attr("d", path.attr("d"));
-
-  } else if (this.g.isSVG) {
-    var path = this.svg.select('.e' + this.source.id);
-    path.attr("stroke-width", this.width)
-      .attr("stroke-dasharray", this.dasharray)
-      .attr("stroke", this.color);
-
-    this.svg.select('.e' + this.target.id).attr("visibility", "hidden");
-    if (this.space == 0) {
-      segments = this.svg.select(".mainPath").node().getPathData();
-      if (this.mainPath && segments.length > 4) {
-        start = Link.getIntersection(this.source, segments.getItem(2));
-        if (start.x && start.y) {
-          Link.applyCoord(start, segments.getItem(0));
-          Link.applyCoord(start, segments.getItem(1));
-        }
-        end = Link.getIntersection(this.target, segments.getItem(segments.length - 3));
-        if (end.x && end.y) {
-          Link.applyCoord(end, segments.getItem(segments.length - 1));
-          Link.applyCoord(end, segments.getItem(segments.length - 2));
-        }
-        this.setMainPath(segments.path());
-      } else {
-        start = Link.getIntersection(this.source, this.target.getCenter());
-        end = Link.getIntersection(this.target, this.source.getCenter());
-        if (start.x && start.y && end.x && end.y) {
-          this.setMainPath("M" + start.x + "," + start.y + " L" + start.x + "," + start.y +
-            " L" + end.x + "," + end.y + " L" + end.x + "," + end.y);
-        } else {
-          return;
-        }
-      }
-      path.attr("d", this.mainPath);
-    } else {
-      path.attr("d", this.getRootMainPath());
-    }
-    this.updateSpacers(path.node(), '.e' + this.source.id);
-    this.setMainPath(path.attr('d'));
-    this.svg.select(".click_e" + this.source.id).attr("d", path.attr("d"));
+    ctx.stroke(new Path2D(this.mainPath));
   }
 };
 
 Link.prototype.drawBLink = function() {
+  var d;
   this.drawSLink();
   var sPath = this.svg.select('.e' + this.source.id);
   var l = sPath.node().getTotalLength() * this.ratio;
@@ -205,7 +174,7 @@ Link.prototype.drawBLink = function() {
   for (var s = sSeg.length - 1; s >= i; s--) {
     var p = sSeg.getItem(s);
     if (!d) {
-      var d = 'M' + p.x + ',' + p.y + ' ';
+      d = 'M' + p.x + ',' + p.y + ' ';
     } else {
       d += 'L' + p.x + ',' + p.y + ' ';
     }
@@ -266,12 +235,7 @@ Link.prototype.redraw = function() {
   if (this.isThemeLink()) {
     this.drawTheme();
   } else if (this.connectCount() == 2) {
-    if (this.arrow == this.id) {
-      this.drawBLink();
-    } else {
-      this.drawSLink();
-    }
-
+    this.arrow = this.id ? this.drawBLink() : this.drawSLink();
   } else {
     this.drawMLink();
   }
@@ -280,13 +244,9 @@ Link.prototype.redraw = function() {
   this.redrawLabels();
 
   //Draw Arrows
-  if (this.g.isCanvas) {
-
-  } else if (this.g.isSVG) {
-    this.svg.selectAll(".arrow").remove();
-    if (this.arrow != null) {
-      this.drawArrows();
-    }
+  this.svg.selectAll(".arrow").remove();
+  if (this.arrow != null) {
+    this.drawArrows();
   }
 };
 
@@ -315,9 +275,10 @@ Link.prototype.updateSpacers = function(path, id) {
 
   if (this.space != 0) {
     var rootSegments = this.connectCount() == 2 ?
-      this.getRootMainPath() :
+      this.getRootMainPath().node().getPathData() :
       this.g.relations[this.hash()][0].svg.select(id).node().getPathData();
     if (rootSegments.length > 4) {
+      var eq;
       for (var i = 2; i < rootSegments.length - 2; i++) {
         var p = rootSegments.getItem(i);
         v1 = Link.vector(rootSegments.getItem(i - 1), p);
@@ -338,11 +299,11 @@ Link.prototype.updateSpacers = function(path, id) {
           }
         } else if (v1.x == 0) {
           cp.x = segments.getItem(i - 1).x;
-          var eq = Link.lineEq(m, rootSegments.getItem(i));
+          eq = Link.lineEq(m, rootSegments.getItem(i));
           cp.y = eq.a * cp.x + eq.b;
         } else if (v2.x == 0) {
           cp.x = segments.getItem(i + 1).x;
-          var eq = Link.lineEq(m, rootSegments.getItem(i));
+          eq = Link.lineEq(m, rootSegments.getItem(i));
           cp.y = eq.a * cp.x + eq.b;
         } else if (v1.y == 0) {
           cp.y = segments.getItem(i - 1).y;
@@ -359,7 +320,7 @@ Link.prototype.updateSpacers = function(path, id) {
 
 Link.prototype.setLinkCenter = function() {
   var pos = [0, 0];
-  for (id in this.connect) {
+  for (var id in this.connect) {
     var c = this.connect[id].getCenter();
     if (this.svg.select(".e" + id).attr('d')) {
       var centralLink = this.g.relations[this.hash()][0];
@@ -445,21 +406,21 @@ Link.prototype.addMainPath = function() {
 };
 
 Link.prototype.removeMainPath = function() {
-  if (this.isSVG) {
-    this.svg.select(".mainPath").remove();
-  }
+  this.svg.select(".mainPath").remove();
 };
 
 Link.prototype.setMainPath = function(d) {
   this.mainPath = d;
-  if (this.isSVG) {
-    this.svg.select(".mainPath").attr("d", d);
-  }
+  this.svg.select(".mainPath").attr("d", d);
+};
+
+Link.prototype.getMainPath = function() {
+  return this.svg.select(".mainPath");
 };
 
 Link.prototype.getRootMainPath = function() {
   var clink = this.g.relations[this.hash()][0];
-  return clink.mainPath;
+  return clink.svg.select(".mainPath");
 };
 
 Link.getPathIndex = function(segments, point) {
@@ -472,7 +433,7 @@ Link.getPathIndex = function(segments, point) {
       get[l] = i;
     }
   }
-  return index = get[Math.min.apply(Math, dist)] + 1;
+  return get[Math.min.apply(Math, dist)] + 1;
 };
 
 Link.getDistanceToSegment = function(pi, pj, pc) {
@@ -547,10 +508,10 @@ Link.boxIntersect = function(bbox, line) {
     y: bbox.y + bbox.height
   }];
   var lines = [n, s, e, w];
-  var inter = []
+  var inter = [];
   for (var i in lines) {
-    var p1 = new Object();
-    var p2 = new Object();
+    var p1 = {};
+    var p2 = {};
     var r = Link.intersect(lines[i], line, p1, p2);
     if (r != 0) {
       inter.push(p1);
@@ -696,7 +657,7 @@ Link.inSegment = function(P, S) {
  *
  */
 Link.vector = function(from, to) {
-  var v = new Object();
+  var v = {};
   v.x = ((to.x || to.x == 0) ? parseFloat(to.x) : parseFloat(to[0])) - ((from.x || from.x == 0) ? parseFloat(from.x) : parseFloat(from[0]));
   v.y = ((to.y || to.y == 0) ? parseFloat(to.y) : parseFloat(to[1])) - ((from.y || from.y == 0) ? parseFloat(from.y) : parseFloat(from[1]));
   v.norm = function() {

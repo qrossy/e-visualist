@@ -27,7 +27,7 @@ function CanvasEvent(graph) {
     this.styleBorderTop = parseInt(document.defaultView.getComputedStyle(this.canvas, null)['borderTopWidth'], 10) || 0;
   }
   this.dragging = false; // Keep track of when we are dragging
-  this.selection = null;
+  this.clicked = null;
   this.dragoffx = 0; // See mousedown and mousemove events for explanation
   this.dragoffy = 0;
 
@@ -39,16 +39,19 @@ function CanvasEvent(graph) {
   this.canvas.addEventListener('mousedown', function(e) {
     if (self.verbose) log('Down');
     var pos = self.getMouse(e);
-    self.selection = self.getObjectAt(pos);
-    if (self.selection) {
+    self.clicked = self.getObjectAt(pos);
+    if (self.clicked) {
       if (Interface.addingLink) {
-        Interface.addingLink.from = self.selection;
+        Interface.addingLink.from = self.clicked;
       } else {
+        Interface.get().updateProperties(self.clicked);
         self.dragging = true;
-        self.dragoffx = pos.x - self.selection.x;
-        self.dragoffy = pos.y - self.selection.y;
+        self.dragoffx = pos.x - self.clicked.x;
+        self.dragoffy = pos.y - self.clicked.y;
       }
     }
+    var div = Interface.get().popupDiv;
+    $(div).fadeOut();
   }, true);
   this.canvas.addEventListener('mousemove', function(e) {
     if (self.verbose) log('Move');
@@ -56,8 +59,8 @@ function CanvasEvent(graph) {
     if (self.dragging) {
       // We don't want to drag the object by its top-left corner, we want to drag it
       // from where we clicked. Thats why we saved the offset and use it here
-      self.selection.x = pos.x - self.dragoffx;
-      self.selection.y = pos.y - self.dragoffy;
+      self.clicked.x = pos.x - self.dragoffx;
+      self.clicked.y = pos.y - self.dragoffy;
       self.draw();
       e.stopPropagation();
     } else if (Interface.addingLink && Interface.addingLink.from) {
@@ -69,17 +72,23 @@ function CanvasEvent(graph) {
       self.ctx.moveTo(start.x, start.y);
       self.ctx.lineTo(pos.x, pos.y);
       self.ctx.stroke();
+      e.stopPropagation();
     }
+
   }, true);
   this.canvas.addEventListener('mouseup', function(e) {
     if (self.verbose) log('Up');
-    var target = self.getMouse(e);
-    if (target && Interface.addingLink) {
-      Interface.createRelation(e, [Interface.addingLink.from, target]);
-    }
-    Interface.addingLink = false;
-    self.draw();
     self.dragging = false;
+    var pos = self.getMouse(e);
+    var target = self.getObjectAt(pos);
+    if (target != self.clicked && Interface.addingLink) {
+      Interface.createRelation(e, [Interface.addingLink.from, target]);
+      self.draw();
+      Interface.addingLink = false;
+    } else if (self.clicked && event.which == 3) {
+      self.nodePopup(e);
+    }
+
   }, true);
   // double click for making new shapes
   this.canvas.addEventListener('dblclick', function(e) {
@@ -112,12 +121,13 @@ CanvasEvent.prototype.clear = function() {
 };
 
 CanvasEvent.prototype.draw = function() {
+  log('CanvasRedraw');
   var ctx = this.ctx;
   ctx.save();
   this.clear();
   if (d3.event) {
-    this.translate = d3.event.translate;
-    this.scale = d3.event.scale;
+    this.translate = d3.event.translate ? d3.event.translate : this.translate;
+    this.scale = d3.event.scale ? d3.event.scale : this.scale;
   }
   ctx.translate(this.translate[0], this.translate[1]);
   ctx.scale(this.scale, this.scale);
@@ -140,8 +150,8 @@ CanvasEvent.prototype.draw = function() {
       rel.redraw();
     }
   }
-  if (this.selection != null) {
-    this.selection.selector.update();
+  if (this.clicked != null) {
+    this.clicked.selector.update();
 
   }
   ctx.restore();
@@ -171,12 +181,177 @@ CanvasEvent.prototype.getMouse = function(e) {
   offsetX += this.stylePaddingLeft + this.styleBorderLeft + this.htmlLeft;
   offsetY += this.stylePaddingTop + this.styleBorderTop + this.htmlTop;
 
-  mx = (e.pageX - this.translate[0] - offsetX) / this.scale ;
-  my = (e.pageY - this.translate[1]  - offsetY) / this.scale ;
+  mx = (e.pageX - this.translate[0] - offsetX) / this.scale;
+  my = (e.pageY - this.translate[1] - offsetY) / this.scale;
 
   // We return a simple javascript object (a hash) with x and y defined
   return {
     x: mx,
     y: my
   };
+};
+
+CanvasEvent.prototype.nodePopup = function(event) {
+  var self = this;
+  var div = Interface.get().popupDiv;
+  $(div)
+    .css("left", event.pageX - 115)
+    .css("top", event.pageY)
+    .css("width", "230px")
+    .css("border", "1px solid #CCCCCC")
+    .html("")
+    .bind('contextmenu', function(event) {
+      event.preventDefault();
+    });
+  var svg = d3.select("#visualist_popup")
+    .append("svg:svg")
+    .attr("width", 250)
+    .attr("height", 40);
+
+  //Icon
+  svg.append("svg:image")
+    .attr("xlink:href", this.clicked.icon)
+    .attr("preserveAspectRatio", "xMinYMin")
+    .attr("width", "22px")
+    .attr("height", 22 * this.clicked.h / this.clicked.w + "px")
+    .attr("x", 10)
+    .attr("y", 10)
+    .on('click', function() {
+      if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+      Interface.entityType = 0;
+      self.clicked.shape = 0;
+      self.draw();
+    });
+  //Box
+  svg.append("svg:rect")
+    .attr("fill-opacity", 0)
+    .attr("stroke", this.clicked.color)
+    .attr("stroke-width", 1)
+    .attr("rx", 5)
+    .attr("ry", 5)
+    .attr("width", 20)
+    .attr("height", 20 * this.clicked.h / this.clicked.w)
+    .attr("x", 40)
+    .attr("y", 10)
+    .on('click', function() {
+      if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+      Interface.entityType = 1;
+      self.clicked.shape = 1;
+      self.draw();
+    });
+  //Circle
+  svg.append("svg:circle")
+    .attr("fill-opacity", 0)
+    .attr("stroke", this.clicked.color)
+    .attr("stroke-width", 1)
+    .attr("r", 10)
+    .attr("cx", 80)
+    .attr("cy", 22)
+    .on('click', function() {
+      if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+      Interface.entityType = 2;
+      self.clicked.shape = 2;
+      self.draw();
+    });
+  //Set
+  var m = 5,
+    w = 7,
+    h = 20,
+    s = 10;
+  var path = "M-" + m + ",0 Q-" + (m + w / 2) + ",0 -" + (m + w / 2) + "," + h / 4 + " T-" + (m + w) + "," + h / 2 + " ";
+  path += "M-" + m + "," + h + " Q-" + (m + w / 2) + "," + h + " -" + (m + w / 2) + "," + h * 3 / 4 + " T-" + (m + w) + "," + h / 2 + "";
+  path += "M" + (s + m) + ",0 Q" + (s + m + w / 2) + ",0 " + (s + m + w / 2) + "," + h / 4 + " T" + (s + m + w) + "," + h / 2 + " ";
+  path += "M" + (s + m) + "," + h + " Q" + (s + m + w / 2) + "," + h + " " + (s + m + w / 2) + "," + h * 3 / 4 + " T" + (s + m + w) + "," + h / 2 + " ";
+  svg.append("svg:g")
+    .attr("transform", "translate(130,13)")
+    .attr("class", "set")
+    .append("svg:rect")
+    .attr("fill-opacity", 0)
+    .attr("stroke-opacity", 0)
+    .attr("rx", 5)
+    .attr("ry", 5)
+    .attr("width", 30)
+    .attr("height", 20)
+    .attr("x", -10)
+    .attr("y", 0)
+    .on('click', function() {
+      if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+      self.clicked.set = self.clicked.set ? false : true;
+      self.draw();
+    });
+  svg.select('.set')
+    .append("svg:path")
+    .attr("fill-opacity", 0)
+    .attr("stroke", this.clicked.color)
+    .attr("stroke-linecap", "round")
+    .attr("stroke-width", 2)
+    .attr('d', path);
+  //ThemeLine
+  svg.append("svg:g")
+    .attr("class", "theme")
+    .append("svg:line")
+    .attr("stroke", this.clicked.color)
+    .attr("stroke-width", 2)
+    .attr("x1", 190)
+    .attr("y1", 25)
+    .attr("x2", 210)
+    .attr("y2", 25);
+  svg.select('.theme')
+    .append("svg:image")
+    .attr("xlink:href", this.clicked.icon)
+    .attr("preserveAspectRatio", "xMinYMin")
+    .attr("width", "22px")
+    .attr("height", 22 * this.clicked.h / this.clicked.w + "px")
+    .attr("x", 180)
+    .attr("y", 10)
+    .on('click', function() {
+      if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+      self.clicked.theme.draw = self.clicked.theme.draw ? false : true;
+      self.draw();
+    });
+
+  var rColor = $('<span class="visualist_linkSelector_color">');
+  var onColor = function(e) {
+    e.preventDefault();
+    if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+    self.clicked.color = this.title;
+    self.draw();
+    $('#FirstColorPicker a').css('border-color', '#ffffff');
+    $(this).css('border-color', '#444444');
+    svg.select('.theme').select('line').attr("stroke", this.title);
+    svg.select('.set').select('path').attr("stroke", this.title);
+    svg.select('rect').attr("stroke", this.title);
+    svg.select('circle').attr("stroke", this.title);
+  };
+  for (var i in Interface.colors) {
+    var color = Interface.colors[i];
+    var c = $('<a href="#" title="' + color + '" style="background-color:' + color + '">&nbsp;&nbsp;&nbsp;</a>')
+      .click(onColor);
+    rColor.append(c);
+  }
+  div.append($('<div id="FirstColorPicker" style="text-align:center;">').append(rColor));
+
+  var wDiv = $('<div style="margin-left:5px;margin-top:5px;">');
+  wDiv.append('<input type="text" id="node-width" size="1" style="float:right;margin-top:-3px;"/>');
+  wDiv.append('<div id="slider-width" style="width:185px;margin-left:3px;margin-bottom:5px;"></div>');
+  div.append(wDiv);
+  $('#slider-width').slider({
+    orientation: "horizontal",
+    range: "min",
+    min: 5,
+    max: 200,
+    step: 5,
+    value: self.clicked.w,
+    slide: function(event, ui) {
+      if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+      $("#node-width").val(ui.value);
+      self.clicked.h = ui.value * self.clicked.h / self.clicked.w;
+      self.clicked.w = ui.value;
+      self.draw();
+    }
+  });
+
+  $("#node-width").val($("#slider-width").slider("value"));
+
+  $(div).show();
 };

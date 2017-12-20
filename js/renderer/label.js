@@ -24,7 +24,7 @@ function Label(params) {
       pos: this.pos, // Node anchor (String from '1' to '9')
       linkPath: this.linkPath, // Link Path
       ratio: this.ratio, // Link anchor (Float 0 to 1)
-      text: this.getHtml(), // Text
+      text: this.e.g.isSVG ? this.getHtml() : this.text, // Text
       textWidth: this.textWidth, // Width of the Text Area
       fixedWidth: this.fixedWidth, // Boolean
     };
