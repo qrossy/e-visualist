@@ -310,9 +310,13 @@ Graph.prototype.setData = function(data) {
 };
 
 Graph.prototype.redraw = function() {
-  for (var i in this.nodes) {
-    this.nodes[i].redraw();
-    this.nodes[i].updateConnect();
+  if (this.isSVG) {
+    for (var i in this.nodes) {
+      this.nodes[i].redraw();
+      this.nodes[i].updateConnect();
+    }
+  } else if (this.isCanvas) {
+    this.canvas.eventHandler.draw();
   }
   // for (var i in this.all){
   // if (this.all[i].type != 0)

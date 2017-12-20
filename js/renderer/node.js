@@ -43,6 +43,7 @@ Node.prototype.redraw = function() {
   if (this.g.isCanvas) {
     var context = this.g.context;
     if (this.shape == 0) {
+      //TODO place imge elsewhere to create object once ?
       var img = new Image();
       img.src = this.icon;
       context.drawImage(img, this.x, this.y, this.w, this.h);

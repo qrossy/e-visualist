@@ -589,7 +589,7 @@ Interface.prototype.createIconSelector = function() {
                 icon: icon,
                 shape: Interface.entityType
               });
-              g.canvas.
+              g.redraw();
             }
           }
           if (g.isSVG) {

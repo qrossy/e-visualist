@@ -115,7 +115,6 @@ CanvasEvent.prototype.draw = function() {
   var ctx = this.ctx;
   ctx.save();
   this.clear();
-
   if (d3.event) {
     this.translate = d3.event.translate;
     this.scale = d3.event.scale;

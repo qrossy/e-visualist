@@ -118,7 +118,6 @@
 			}
 			g.ctrl.addBatch(actions, 'RandomGraph');
 			g.ctrl.run();
-
 			Interface.get().updateHistory();
 			//Send size to SVG:
 			Interface.get().onWindowSizeChanged();
