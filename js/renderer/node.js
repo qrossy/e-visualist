@@ -276,3 +276,9 @@ Node.prototype.contains = function(mx, my) {
   return (this.x <= mx) && (this.x + this.w >= mx) &&
     (this.y <= my) && (this.y + this.h >= my);
 };
+
+Node.prototype.drawDetectionPath = function(ctx) {
+  ctx.beginPath();
+  ctx.rect(this.x, this.y, this.w, this.h);
+  ctx.closePath();
+};

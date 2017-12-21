@@ -158,7 +158,8 @@ Link.prototype.drawSLink = function() {
     var ctx = this.g.context;
     ctx.strokeStyle = this.color;
     ctx.lineWidth = this.width;
-    ctx.stroke(new Path2D(this.mainPath));
+    this.canvasPath2D = new Path2D(this.mainPath);
+    ctx.stroke(this.canvasPath2D);
   }
 };
 

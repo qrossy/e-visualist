@@ -49,7 +49,7 @@ function CanvasEvent(graph) {
         self.dragoffx = pos.x - self.clicked.x;
         self.dragoffy = pos.y - self.clicked.y;
       }
-    }else{
+    } else {
       var div = Interface.get().popupDiv;
       $(div).fadeOut();
     }
@@ -89,7 +89,12 @@ function CanvasEvent(graph) {
       self.draw();
       Interface.addingLink = false;
     } else if (self.clicked && event.which == 3) {
-      self.nodePopup(e);
+      if (self.clicked.type == 0){
+        self.nodePopup(e);
+      }
+      if (self.clicked.type == 1){
+        self.linkPopup(e);
+      }
     }
 
   }, true);
@@ -113,8 +118,30 @@ CanvasEvent.prototype.getObjectAt = function(pos) {
   var shapes = this.graph.nodes;
   for (var id in shapes) {
     if (shapes[id].contains(pos.x, pos.y)) {
-      var mySel = shapes[id];
-      return mySel;
+      return shapes[id];
+    }
+  }
+  var relations = this.graph.relations;
+  for (var r in relations) {
+    var group = relations[r];
+    for (var g in group) {
+      var rel = group[g];
+      if (rel.type == 1) { // this is a link
+        var path = rel.svg.select('.mainPath').node();
+        var pathSource = rel.svg.select('.e' + rel.source.id).node();
+        var pathTarget = rel.svg.select('.e' + rel.target.id).node();
+        var bestSource = closestPoint(pathSource, pos);
+        var bestTarget = closestPoint(pathTarget, pos);
+        if (bestSource.distance <= 5 || bestTarget.distance <= 5) {
+          return rel;
+        }
+        // var path = rel.canvasPath2D;
+        // var ctx = rel.g.context;
+        // if (ctx.isPointInPath(path, pos.x, pos.y)) {
+        //   log('hit Link');
+        //   return relations[r];
+        // }
+      }
     }
   }
   return null;
@@ -356,6 +383,291 @@ CanvasEvent.prototype.nodePopup = function(event) {
   });
 
   $("#node-width").val($("#slider-width").slider("value"));
+
+  $(div).show();
+};
+
+
+
+
+
+
+CanvasEvent.prototype.linkPopup = function(event) {
+  var self = this;
+  var div = Interface.get().popupDiv;
+  $(div)
+    .css("left", event.pageX - 115)
+    .css("top", event.pageY)
+    .css("width", "230px")
+    .css("border", "1px solid #CCCCCC")
+    .html("")
+    .bind('contextmenu', function(event) {
+      event.preventDefault();
+    });
+  var svg = d3.select("#visualist_popup")
+    .append("svg:svg")
+    .attr("width", 250)
+    .attr("height", 100);
+  var path = this.clicked.svg.select(".mainPath").node();
+  var target = this.clicked.svg.select(".e"+this.clicked.target.id).node();
+  var segments = this.clicked.main ? path.getPathData() : target.getPathData();
+  var v = Link.vector(segments.getItem(1), segments.getItem(segments.length - 1));
+
+  var createLine = function(from, to) {
+    var line = svg.append("svg:g");
+    line.append("svg:path")
+      .attr("class", "ground")
+      .attr("fill-opacity", 0)
+      .attr("stroke-linejoin", "round")
+      .attr("stroke-width", 15)
+      .attr("stroke", "#ffffff")
+      .attr("d", "M" + from + " L" + to);
+    line.append("svg:path")
+      .attr("class", "arrow")
+      .attr("fill-opacity", 0)
+      .attr("stroke-linejoin", "round")
+      .attr("stroke-width", 2)
+      .attr("stroke", "black")
+      .attr("d", "M" + from + " L" + to);
+    return line;
+  };
+
+  var dist = 4; // ArrowLength
+  var space = 5; // ArrowSpace
+  var arrow = function(point, reverse) {
+    if (reverse) dist = -dist;
+    var d = " M" + (point.x + dist * v.ux() + (space * v.uy())) + "," + (point.y + dist * v.uy() + (-space * v.ux()));
+    d += " L" + point.x + "," + point.y;
+    d += " L" + (point.x + dist * v.ux() - (space * v.uy())) + "," + (point.y + dist * v.uy() - (-space * v.ux()));
+    return d;
+  };
+
+  var s = 10;
+  var margin = 15;
+  var c = {
+    x: s + margin + 5,
+    y: s + margin
+  };
+  for (var i = 1; i < 5; i++) {
+    var line = createLine((c.x - s * v.ux()) + "," + (c.y - s * v.uy()), (c.x + s * v.ux()) + "," + (c.y + s * v.uy()));
+    if (i == 1) {
+      line.on('mouseup', function() {
+        if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+        self.clicked.arrow = null;
+        self.clicked.arrowOthers = false;
+        if (self.clicked.space != 0) {
+          self.clicked.removeMainPath();
+        }
+        self.draw();
+        $(this).parent().find('.arrow').each(function() {
+          $(this).attr("stroke", "black");
+        });
+        $(this).find('.arrow').attr("stroke", "red");
+        if (self.clicked.connectCount() == 2) {
+          $(this).parent().find('.ratio-ctrl').attr("visibility", 'hidden');
+          $('#SecondColorPicker').hide();
+        }
+      });
+      if (self.clicked.arrow == null) line.select(".arrow").attr("stroke", "red");
+    }
+    if (i == 2) {
+      var point = {
+        x: (c.x - s * v.ux()),
+        y: (c.y - s * v.uy())
+      };
+      var d = arrow(point);
+      line.select(".arrow").attr('d', line.select(".arrow").attr('d') + d);
+      var id = path ? $(path).attr('class').split("e")[1] : $(target).attr('class').split("e")[1];
+      line.on('mouseup', function() {
+        if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+        self.clicked.arrow = id;
+        self.clicked.arrowOthers = false;
+        if (self.clicked.space != 0) {
+          self.clicked.removeMainPath();
+        }
+        self.draw();
+        $(this).parent().find('.arrow').each(function() {
+          $(this).attr("stroke", "black");
+        });
+        $(this).find('.arrow').attr("stroke", "red");
+        if (self.clicked.connectCount() == 2) {
+          $(this).parent().find('.ratio-ctrl').attr("visibility", 'hidden');
+          $('#SecondColorPicker').hide();
+        }
+      });
+      if ((!self.clicked.arrowOthers && self.clicked.arrow == id) || (self.clicked.arrowOthers && self.clicked.arrow != id)) line.select(".arrow").attr("stroke", "red");
+    } else if (i == 3) {
+      var point = {
+        x: (c.x + s * v.ux()),
+        y: (c.y + s * v.uy())
+      };
+      var d = arrow(point, true);
+      line.select(".arrow").attr('d', line.select(".arrow").attr('d') + d);
+      var id = path ? $(path).attr('class').split("e")[1] : $(target).attr('class').split("e")[1];
+      line.on('mouseup', function() {
+        if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+        self.clicked.arrow = id;
+        self.clicked.arrowOthers = true;
+        if (self.clicked.space != 0) {
+          self.clicked.removeMainPath();
+        }
+        self.draw();
+        $(this).parent().find('.arrow').each(function() {
+          $(this).attr("stroke", "black");
+        });
+        $(this).find('.arrow').attr("stroke", "red");
+        if (self.clicked.connectCount() == 2) {
+          $(this).parent().find('.ratio-ctrl').attr("visibility", 'hidden');
+          $('#SecondColorPicker').hide();
+        }
+      });
+      if ((!self.clicked.arrowOthers && self.clicked.arrow != id && self.clicked.arrow != null && self.clicked.arrow != self.clicked.id) || (self.clicked.arrowOthers && self.clicked.arrow == id)) line.select(".arrow").attr("stroke", "red");
+    } else if (i == 4) {
+      var point = {
+        x: c.x,
+        y: c.y
+      };
+      var d1 = arrow(point);
+      var d2 = arrow(point, true);
+      line.select(".arrow").attr('d', line.select(".arrow").attr('d') + d1 + d2);
+      line.on('mouseup', function() {
+        if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+        self.clicked.arrow = self.clicked.id;
+        self.clicked.arrowOthers = false;
+        if (self.clicked.space != 0) {
+          self.clicked.addMainPath();
+        }
+        self.draw();
+        $(this).parent().find('.arrow').each(function() {
+          $(this).attr("stroke", "black");
+        });
+        $(this).find('.arrow').attr("stroke", "red");
+        if (self.clicked.connectCount() == 2) {
+          $(this).parent().find('.ratio-ctrl').attr("visibility", 'visible');
+          $('#SecondColorPicker').show();
+        }
+      });
+      if (self.clicked.arrow == self.clicked.id) line.select(".arrow").attr("stroke", "red");
+
+    }
+    c.x += s + margin;
+  }
+  var width = 80;
+  var dasharray = [null, '10,5', '3,4', '1,3'];
+  var i = 0;
+  c.x += margin;
+  for (var d in dasharray) {
+    var pattern = dasharray[d];
+    var line = createLine((c.x) + "," + (c.y - 15 + i * 10), (c.x + width) + "," + (c.y - 15 + i * 10));
+    line.select('.arrow').attr("stroke-dasharray", pattern);
+    line.on('mouseup', function() {
+      if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+      self.clicked.dasharray = $(this).find('.arrow').attr("stroke-dasharray");
+      self.draw();
+      $(this).parent().find('.arrow').each(function() {
+        $(this).attr("stroke", "black");
+      });
+      $(this).find('.arrow').attr("stroke", "red");
+    });
+    if (self.clicked.dasharray == pattern) line.select(".arrow").attr("stroke", "red");
+    i += 1;
+  }
+  c.x += width + 5;
+  svg.attr("width", c.x).attr("height", c.y + s + margin);
+
+  //widthSlider
+  svgSlider(svg, 0, 0, "width", 1, 35, 1, "width", self.clicked);
+
+  if (this.clicked.connectCount() == 2) {
+    var ratioSvg = svg.append("svg:foreignObject")
+      .attr("x", 120)
+      .attr("y", 0)
+      .attr("width", 20)
+      .attr("height", 70)
+      .attr("class", "ratio-ctrl")
+      .attr("visibility", this.clicked.arrow == this.clicked.id ? 'visible' : 'hidden');
+    var rDiv = $('<div style="margin-left:5px;">');
+    rDiv.append('<input type="text" id="ratio" size="1"/>');
+    rDiv.append('<div id="slider-ratio" style="height:25px;"></div>');
+    $(ratioSvg.node()).append(rDiv);
+    $("#slider-ratio").slider({
+      orientation: "vertical",
+      range: "min",
+      min: 0.1,
+      max: 0.9,
+      step: 0.05,
+      value: self.clicked.ratio,
+      slide: function(event, ui) {
+        if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+        $("#ratio").val(ui.value);
+        self.clicked.ratio = ui.value;
+        self.draw();
+      }
+    });
+    $("#ratio").val($("#slider-ratio").slider("value"));
+  }
+  var linkDiv = $('<div id="FirstColorPicker" style="text-align:center;margin-top:2px;">');
+  var rColor = $('<span class="visualist_linkSelector_color">');
+  for (var i in Interface.colors) {
+    var color = Interface.colors[i];
+    var link = $('<a href="#" title="' + color + '" style="background-color:' + color + '">&nbsp;&nbsp;&nbsp;</a>')
+      .click(function(e) {
+        e.preventDefault();
+        if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+        self.clicked.color = this.title;
+        self.draw();
+        $('#FirstColorPicker a').css('border-color', '#ffffff');
+        $(this).css('border-color', '#444444');
+      });
+    rColor.append(link);
+  }
+  linkDiv.append(rColor);
+  div.append(linkDiv);
+  var linkDiv = $('<div id="SecondColorPicker" style="text-align:center;">');
+  var rColor = $('<span class="visualist_linkSelector_color">');
+  for (var i in Interface.colors) {
+    var color = Interface.colors[i];
+    var link = $('<a href="#" title="' + color + '" style="background-color:' + color + '">&nbsp;&nbsp;&nbsp;</a>')
+      .click(function(e) {
+        e.preventDefault();
+        if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+        self.clicked.secondColor = this.title;
+        self.draw();
+        $('#SecondColorPicker a').css('border-color', '#ffffff');
+        $(this).css('border-color', '#444444');
+      });
+    rColor.append(link);
+  }
+  linkDiv.append(rColor);
+  if (!(this.clicked.connectCount() == 2 && this.clicked.arrow == this.clicked.id)) {
+    linkDiv.hide();
+  }
+  div.append(linkDiv);
+
+  // var eType = $('<div class="visualist_selector_type" style="margin-bottom:5px;">')
+  // eType.append('<input type="radio" id="visualist_selector_type1" name="radio" checked="checked" value="0"/><label for="visualist_selector_type1">Icon</label>');
+  // eType.append('<input type="radio" id="visualist_selector_type2" name="radio" value="1"/><label for="visualist_selector_type2">Box</label>');
+  // eType.append('<input type="radio" id="visualist_selector_type3" name="radio" value="2"/><label for="visualist_selector_type3">Circle</label>');
+  // eType.append('<input type="radio" id="visualist_selector_type4" name="radio" value="3"/><label for="visualist_selector_type4">Link</label>');
+  // eType.append('<input type="radio" id="visualist_selector_type5" name="radio" value="4"/><label for="visualist_selector_type5">Polygon</label>');
+  // eType.append('<input type="radio" id="visualist_selector_type6" name="radio" value="5"/><label for="visualist_selector_type6">LinkBox</label>');
+
+  // eType.buttonset();
+  // eType.find('input').click(function() {
+  // var type = parseInt($(this).attr('value'));
+  // var data = self.clicked.getData();
+  // self.g.ctrl.addAction(Action.removeEntity, {e:self.clicked, g:self.g});
+  // self.g.ctrl.run();
+  // if (type == 0 || type == 1 || type == 2){
+  // data.shape = type;
+  // self.g.ctrl.addAction(Action.createNode, {e:data, g:self.g});
+  // var node = self.g.ctrl.run();
+  // for (var i in node.connect){
+  // self.g.createRelation('link',[node.connect[i], node], {color:data.color});
+  // }
+  // }
+  // });
+  // div.append(eType);
 
   $(div).show();
 };

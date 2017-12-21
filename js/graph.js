@@ -54,7 +54,6 @@ Graph.prototype.init = function() {
       .append("canvas")
       .attr("class", "canvas")
       .attr("transform", "translate(0) scale(1)");
-    this.main = this.canvas;
     this.context = this.canvas.node().getContext("2d");
     this.canvas.eventHandler = new CanvasEvent(this);
 
