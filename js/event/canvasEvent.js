@@ -59,6 +59,8 @@ function CanvasEvent(graph) {
   this.canvas.addEventListener('mousemove', function(e) {
     if (self.verbose) log('Move');
     var pos = self.getMouse(e);
+
+    //TODO handling dragging outside of the canvas ... block and panning ?
     if (self.dragging) {
       // We don't want to drag the object by its top-left corner, we want to drag it
       // from where we clicked. Thats why we saved the offset and use it here
@@ -179,6 +181,8 @@ CanvasEvent.prototype.draw = function() {
       //TODO We can skip the drawing of elements that have moved off the screen:
       // if (shape.x > this.width || shape.y > this.height ||
       //   shape.x + shape.w < 0 || shape.y + shape.h < 0) continue;
+
+      //relations of clicked node are drawn at the end ! TODO see if possible to redraw only moving elements !
       if (this.clicked != null) {
         if (this.clicked.id in rel.connect) {
           // we draw theses relations at the end
