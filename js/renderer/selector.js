@@ -53,18 +53,16 @@ Selector.prototype.update = function() {
     if (this.elem.connectCount() != 2 || this.elem.arrow == this.elem.id) {
       this.updateGrip(this.elem.getPosition(), "center");
     }
-    if (this.g.isSVG) {
-      this.elem.svg.selectAll("path").each(function() {
-        if ($(this).attr("visibility") == "hidden" || $(this).attr("class") == "arrow" || $(this).attr("class").split("_")[0] == "click") {
-          return;
-        }
-        var s = this.getPathData();
-        for (var i = 1; i <= (s.length - 2); i++) {
-          var id = $(this).attr('class');
-          self.updateGrip(s.getItem(i), id + "_cp_" + i);
-        }
-      });
-    }
+    this.elem.svg.selectAll("path").each(function() {
+      if ($(this).attr("visibility") == "hidden" || $(this).attr("class") == "arrow" || $(this).attr("class").split("_")[0] == "click") {
+        return;
+      }
+      var s = this.getPathData();
+      for (var i = 1; i <= (s.length - 2); i++) {
+        var id = $(this).attr('class');
+        self.updateGrip(s.getItem(i), id + "_cp_" + i);
+      }
+    });
   } else if (this.elem.type == 3) {
     if (this.g.isSVG) {
       this.elem.svg.select("path").each(function() {

@@ -89,10 +89,10 @@ function CanvasEvent(graph) {
       self.draw();
       Interface.addingLink = false;
     } else if (self.clicked && event.which == 3) {
-      if (self.clicked.type == 0){
+      if (self.clicked.type == 0) {
         self.nodePopup(e);
       }
-      if (self.clicked.type == 1){
+      if (self.clicked.type == 1) {
         self.linkPopup(e);
       }
     }
@@ -110,6 +110,15 @@ CanvasEvent.prototype.screenToCanvas = function(pos) {
     y: (pos.y - this.translate[0]) / this.scale
   } : [(pos[0] - this.translate[1]) / this.scale,
     (pos[1] - this.translate[1]) / this.scale
+  ];
+};
+
+CanvasEvent.prototype.canvasToScreen = function(pos) {
+  return pos.x ? {
+    x: (pos.x + this.translate[0]) * this.scale,
+    y: (pos.y + this.translate[0]) * this.scale
+  } : [(pos[0] + this.translate[1]) * this.scale,
+    (pos[1] + this.translate[1]) * this.scale
   ];
 };
 
@@ -162,28 +171,41 @@ CanvasEvent.prototype.draw = function() {
   }
   ctx.translate(this.translate[0], this.translate[1]);
   ctx.scale(this.scale, this.scale);
-  var nodes = this.graph.nodes;
-  for (var n in nodes) {
-    var node = nodes[n];
-    // We can skip the drawing of elements that have moved off the screen:
-    // if (node.x > this.width || node.y > this.height ||
-    //   node.x + node.w < 0 || node.y + node.h < 0) continue;
-    node.redraw();
-  }
   var relations = this.graph.relations;
   for (var r in relations) {
     var group = relations[r];
     for (var g in group) {
       var rel = group[g];
-      // We can skip the drawing of elements that have moved off the screen:
+      //TODO We can skip the drawing of elements that have moved off the screen:
       // if (shape.x > this.width || shape.y > this.height ||
       //   shape.x + shape.w < 0 || shape.y + shape.h < 0) continue;
+      if (this.clicked != null) {
+        if (this.clicked.id in rel.connect) {
+          // we draw theses relations at the end
+          continue;
+        }
+      }
       rel.redraw();
     }
   }
   if (this.clicked != null) {
-    this.clicked.selector.update();
+    this.clicked.updateConnect();
+  }
+  var nodes = this.graph.nodes;
+  for (var n in nodes) {
+    var node = nodes[n];
+    //TODO We can skip the drawing of elements that have moved off the screen:
+    // if (node.x > this.width || node.y > this.height ||
+    //   node.x + node.w < 0 || node.y + node.h < 0) continue;
 
+    //clicked node is drawn at the end ! TODO see if possible to redraw only moving elements !
+    if (node != this.clicked) {
+      node.redraw();
+    }
+  }
+  if (this.clicked != null) {
+    this.clicked.redraw();
+    this.clicked.selector.update();
   }
   ctx.restore();
 };
@@ -409,7 +431,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
     .attr("width", 250)
     .attr("height", 100);
   var path = this.clicked.svg.select(".mainPath").node();
-  var target = this.clicked.svg.select(".e"+this.clicked.target.id).node();
+  var target = this.clicked.svg.select(".e" + this.clicked.target.id).node();
   var segments = this.clicked.main ? path.getPathData() : target.getPathData();
   var v = Link.vector(segments.getItem(1), segments.getItem(segments.length - 1));
 
