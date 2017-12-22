@@ -434,11 +434,11 @@ CanvasEvent.prototype.linkPopup = function(event) {
     .append("svg:svg")
     .attr("width", 250)
     .attr("height", 100);
-  var path = this.clicked.svg.select(".mainPath").node();
-  var target = this.clicked.svg.select(".e" + this.clicked.target.id).node();
-  var segments = this.clicked.main ? path.getPathData() : target.getPathData();
-  var v = Link.vector(segments.getItem(1), segments.getItem(segments.length - 1));
 
+  var source = this.clicked.svg.select(".e" + this.clicked.source.id).node();
+  var target = this.clicked.svg.select(".e" + this.clicked.target.id).node();
+  var segments = source.getPathData();
+  var v = Link.vector(segments.getItem(1), segments.getItem(segments.length - 1));
   var createLine = function(from, to) {
     var line = svg.append("svg:g");
     line.append("svg:path")
@@ -460,7 +460,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
 
   var dist = 4; // ArrowLength
   var space = 5; // ArrowSpace
-  var arrow = function(point, reverse) {
+  var drawArrow = function(point, reverse) {
     if (reverse) dist = -dist;
     var d = " M" + (point.x + dist * v.ux() + (space * v.uy())) + "," + (point.y + dist * v.uy() + (-space * v.ux()));
     d += " L" + point.x + "," + point.y;
@@ -501,9 +501,9 @@ CanvasEvent.prototype.linkPopup = function(event) {
         x: (c.x - s * v.ux()),
         y: (c.y - s * v.uy())
       };
-      var d = arrow(point);
+      var d = drawArrow(point);
       line.select(".arrow").attr('d', line.select(".arrow").attr('d') + d);
-      var id = path ? $(path).attr('class').split("e")[1] : $(target).attr('class').split("e")[1];
+      var id = $(target).attr('class').split("e")[1];
       line.on('mouseup', function() {
         if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
         self.clicked.arrow = id;
@@ -521,15 +521,15 @@ CanvasEvent.prototype.linkPopup = function(event) {
           $('#SecondColorPicker').hide();
         }
       });
-      if ((!self.clicked.arrowOthers && self.clicked.arrow == id) || (self.clicked.arrowOthers && self.clicked.arrow != id)) line.select(".arrow").attr("stroke", "red");
+      if (self.clicked.arrow == id && !self.clicked.arrowOthers ) line.select(".arrow").attr("stroke", "red");
     } else if (i == 3) {
       var point = {
         x: (c.x + s * v.ux()),
         y: (c.y + s * v.uy())
       };
-      var d = arrow(point, true);
+      var d = drawArrow(point, true);
       line.select(".arrow").attr('d', line.select(".arrow").attr('d') + d);
-      var id = path ? $(path).attr('class').split("e")[1] : $(target).attr('class').split("e")[1];
+      var id = $(target).attr('class').split("e")[1];
       line.on('mouseup', function() {
         if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
         self.clicked.arrow = id;
@@ -553,8 +553,8 @@ CanvasEvent.prototype.linkPopup = function(event) {
         x: c.x,
         y: c.y
       };
-      var d1 = arrow(point);
-      var d2 = arrow(point, true);
+      var d1 = drawArrow(point);
+      var d2 = drawArrow(point, true);
       line.select(".arrow").attr('d', line.select(".arrow").attr('d') + d1 + d2);
       line.on('mouseup', function() {
         if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
@@ -588,7 +588,9 @@ CanvasEvent.prototype.linkPopup = function(event) {
     line.select('.arrow').attr("stroke-dasharray", pattern);
     line.on('mouseup', function() {
       if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
-      self.clicked.dasharray = $(this).find('.arrow').attr("stroke-dasharray");
+      self.clicked.dasharray = null;
+      var dashString = $(this).find('.arrow').attr("stroke-dasharray");
+      if (dashString) self.clicked.dasharray = dashString.split(",");
       self.draw();
       $(this).parent().find('.arrow').each(function() {
         $(this).attr("stroke", "black");
@@ -632,43 +634,47 @@ CanvasEvent.prototype.linkPopup = function(event) {
     });
     $("#ratio").val($("#slider-ratio").slider("value"));
   }
-  var linkDiv = $('<div id="FirstColorPicker" style="text-align:center;margin-top:2px;">');
-  var rColor = $('<span class="visualist_linkSelector_color">');
-  for (var i in Interface.colors) {
-    var color = Interface.colors[i];
-    var link = $('<a href="#" title="' + color + '" style="background-color:' + color + '">&nbsp;&nbsp;&nbsp;</a>')
-      .click(function(e) {
-        e.preventDefault();
-        if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
-        self.clicked.color = this.title;
-        self.draw();
-        $('#FirstColorPicker a').css('border-color', '#ffffff');
-        $(this).css('border-color', '#444444');
-      });
-    rColor.append(link);
+
+
+  var onFirstColor = function(e) {
+    e.preventDefault();
+    if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+    self.clicked.color = this.title;
+    self.draw();
+    $('#FirstColorPicker a').css('border-color', '#ffffff');
+    $(this).css('border-color', '#444444');
+  };
+
+  var onSecondColor = function(e) {
+    e.preventDefault();
+    if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
+    self.clicked.secondColor = this.title;
+    self.draw();
+    $('#SecondColorPicker a').css('border-color', '#ffffff');
+    $(this).css('border-color', '#444444');
+  };
+
+  var firstColorDiv = $('<div id="FirstColorPicker" style="text-align:center;margin-top:2px;">');
+  var secondColorDiv = $('<div id="SecondColorPicker" style="text-align:center;">');
+  var firstColorSpan = $('<span class="visualist_linkSelector_color">');
+  var secondColorSpan = $('<span class="visualist_linkSelector_color">');
+
+  for (var index in Interface.colors) {
+    var color = Interface.colors[index];
+    var c1 = $('<a href="#" title="' + color + '" style="background-color:' + color + '">&nbsp;&nbsp;&nbsp;</a>')
+      .click(onFirstColor);
+    firstColorSpan.append(c1);
+    var c2 = $('<a href="#" title="' + color + '" style="background-color:' + color + '">&nbsp;&nbsp;&nbsp;</a>')
+      .click(onSecondColor);
+    secondColorSpan.append(c2);
   }
-  linkDiv.append(rColor);
-  div.append(linkDiv);
-  var linkDiv = $('<div id="SecondColorPicker" style="text-align:center;">');
-  var rColor = $('<span class="visualist_linkSelector_color">');
-  for (var i in Interface.colors) {
-    var color = Interface.colors[i];
-    var link = $('<a href="#" title="' + color + '" style="background-color:' + color + '">&nbsp;&nbsp;&nbsp;</a>')
-      .click(function(e) {
-        e.preventDefault();
-        if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
-        self.clicked.secondColor = this.title;
-        self.draw();
-        $('#SecondColorPicker a').css('border-color', '#ffffff');
-        $(this).css('border-color', '#444444');
-      });
-    rColor.append(link);
-  }
-  linkDiv.append(rColor);
+  firstColorDiv.append(firstColorSpan);
+  div.append(firstColorDiv);
+  secondColorDiv.append(secondColorSpan);
+  div.append(secondColorDiv);
   if (!(this.clicked.connectCount() == 2 && this.clicked.arrow == this.clicked.id)) {
-    linkDiv.hide();
+    secondColorDiv.hide();
   }
-  div.append(linkDiv);
 
   // var eType = $('<div class="visualist_selector_type" style="margin-bottom:5px;">')
   // eType.append('<input type="radio" id="visualist_selector_type1" name="radio" checked="checked" value="0"/><label for="visualist_selector_type1">Icon</label>');

@@ -46,11 +46,10 @@ Link.prototype.create = function() {
   if (this.svg) {
     this.svg.remove();
   }
-  if (this.g.isSVG){
+  if (this.g.isSVG) {
     this.svg = this.g.svg.select(".links").append("svg:g");
     this.eventHandler = new linkEvent(this.g, this);
-  }
-  else if (this.g.isCanvas){
+  } else if (this.g.isCanvas) {
     //we create detached element used to compute calculation with SVGPath
     //but we don't draw it !
     this.svg = d3.select("body").append("svg").remove();
@@ -154,12 +153,14 @@ Link.prototype.drawSLink = function() {
   this.updateSpacers(path.node(), '.e' + this.source.id);
   this.setMainPath(path.attr('d'));
   this.svg.select(".click_e" + this.source.id).attr("d", path.attr("d"));
-  if (this.g.isCanvas){
+  if (this.g.isCanvas && this.arrow != this.id) {
     var ctx = this.g.context;
     ctx.strokeStyle = this.color;
+    if (this.dasharray) ctx.setLineDash(this.dasharray);
     ctx.lineWidth = this.width;
     this.canvasPath2D = new Path2D(this.mainPath);
     ctx.stroke(this.canvasPath2D);
+    ctx.setLineDash([0]);
   }
 };
 
@@ -188,6 +189,21 @@ Link.prototype.drawBLink = function() {
     .attr("stroke-dasharray", this.dasharray)
     .attr("stroke", this.secondColor)
     .attr("visibility", "visible");
+  if (this.g.isCanvas) {
+    var ctx = this.g.context;
+    ctx.strokeStyle = this.color;
+    if (this.dasharray) ctx.setLineDash(this.dasharray);
+    ctx.lineWidth = this.width;
+    this.canvasPath2D = new Path2D(sSeg.path() + ' L' + center.x + ' ' + center.y);
+    ctx.stroke(this.canvasPath2D);
+    ctx.setLineDash([0]);
+    ctx.strokeStyle = this.secondColor;
+    if (this.dasharray) ctx.setLineDash(this.dasharray);
+    ctx.lineWidth = this.width;
+    this.canvasPath2D = new Path2D(d + ' L' + center.x + ' ' + center.y);
+    ctx.stroke(this.canvasPath2D);
+    ctx.setLineDash([0]);
+  }
 };
 
 Link.prototype.drawMLink = function() {
@@ -236,7 +252,11 @@ Link.prototype.redraw = function() {
   if (this.isThemeLink()) {
     this.drawTheme();
   } else if (this.connectCount() == 2) {
-    this.arrow = this.id ? this.drawBLink() : this.drawSLink();
+    if (this.arrow == this.id) {
+      this.drawBLink();
+    } else {
+      this.drawSLink();
+    }
   } else {
     this.drawMLink();
   }
@@ -358,7 +378,7 @@ Link.prototype.drawArrows = function() {
 };
 
 Link.prototype.addArrow = function(entityId) {
-  //TODO: GENERAL SETTINGS
+  //TODO: ADD arrow params in GENERAL SETTINGS
   var dist = 10; // ArrowLength
   var space = 3 + this.width / 2; // ArrowSpace
   var path;
@@ -394,6 +414,17 @@ Link.prototype.addArrow = function(entityId) {
     .attr("stroke-width", this.width > 4 ? this.width / 2 : this.width)
     .attr("stroke", (this.connectCount() == 2 && this.arrow == this.id && entityId == this.target.id) ? this.secondColor : this.color)
     .attr("d", d);
+  if (this.g.isCanvas) {
+    var color = this.color;
+    if (this.connectCount() == 2 && this.arrow == this.id && entityId == this.target.id) {
+      color = this.secondColor;
+    }
+    var ctx = this.g.context;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = this.width > 4 ? this.width / 2 : this.width;
+    this.canvasPath2D = new Path2D(d);
+    ctx.stroke(this.canvasPath2D);
+  }
 };
 
 
