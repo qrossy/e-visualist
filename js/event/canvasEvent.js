@@ -13,6 +13,8 @@ function CanvasEvent(graph) {
   this.translate = [0, 0];
   var graphZoom = function(event) {
     self.clear();
+    self.clicked = null;
+    self.setViewport();
     self.draw();
   };
   graph.canvas.call(d3.behavior.zoom().on("zoom", graphZoom));
@@ -38,27 +40,32 @@ function CanvasEvent(graph) {
   // Up, down, and move are for dragging
   this.canvas.addEventListener('mousedown', function(e) {
     if (self.verbose) log('Down');
-    var pos = self.getMouse(e);
+    var pos = self.screenToCanvas(e);
     self.clicked = self.getObjectAt(pos);
     if (self.clicked) {
       if (Interface.addingLink) {
         Interface.addingLink.from = self.clicked;
+        this.addingLinkStartPos = pos;
       } else {
         Interface.get().updateProperties(self.clicked);
         self.dragging = true;
         self.dragoffx = pos.x - self.clicked.x;
         self.dragoffy = pos.y - self.clicked.y;
       }
+      //on dragging we redraw only the clicked node (the rest is stored in a image in draw)
+      //on mouse down, we need to redraw all to get the image without the clicked entity
+      self.draw();
+      self.drawClicked();
     } else {
       var div = Interface.get().popupDiv;
       $(div).fadeOut();
     }
-    self.draw();
-
   }, true);
+
+
   this.canvas.addEventListener('mousemove', function(e) {
     if (self.verbose) log('Move');
-    var pos = self.getMouse(e);
+    var pos = self.screenToCanvas(e);
 
     //TODO handling dragging outside of the canvas ... block and panning ?
     if (self.dragging) {
@@ -66,15 +73,16 @@ function CanvasEvent(graph) {
       // from where we clicked. Thats why we saved the offset and use it here
       self.clicked.x = pos.x - self.dragoffx;
       self.clicked.y = pos.y - self.dragoffy;
-      self.draw();
+      self.ctx.putImageData(self.canvasData, 0, 0);
+      //we redraw only the clicked node (the rest is stored in a image in draw)
+      self.drawClicked();
       e.stopPropagation();
     } else if (Interface.addingLink && Interface.addingLink.from) {
       // draw links
       self.draw();
       self.ctx.strokeStyle = "#ccc";
       self.ctx.beginPath();
-      var start = Interface.addingLink.from.getCenter();
-      self.ctx.moveTo(start.x, start.y);
+      self.ctx.moveTo(this.addingLinkStartPos.x, this.addingLinkStartPos.y);
       self.ctx.lineTo(pos.x, pos.y);
       self.ctx.stroke();
       e.stopPropagation();
@@ -84,7 +92,7 @@ function CanvasEvent(graph) {
   this.canvas.addEventListener('mouseup', function(e) {
     if (self.verbose) log('Up');
     self.dragging = false;
-    var pos = self.getMouse(e);
+    var pos = self.screenToCanvas(e);
     var target = self.getObjectAt(pos);
     if (target != self.clicked && Interface.addingLink) {
       Interface.createRelation(e, [Interface.addingLink.from, target]);
@@ -100,29 +108,11 @@ function CanvasEvent(graph) {
     }
 
   }, true);
-  // double click for making new shapes
+  // double click
   this.canvas.addEventListener('dblclick', function(e) {
-    var mouse = self.getMouse(e);
+    //nothing to do now
   }, true);
 }
-
-CanvasEvent.prototype.screenToCanvas = function(pos) {
-  return pos.x ? {
-    x: (pos.x - this.translate[0]) / this.scale,
-    y: (pos.y - this.translate[0]) / this.scale
-  } : [(pos[0] - this.translate[1]) / this.scale,
-    (pos[1] - this.translate[1]) / this.scale
-  ];
-};
-
-CanvasEvent.prototype.canvasToScreen = function(pos) {
-  return pos.x ? {
-    x: (pos.x + this.translate[0]) * this.scale,
-    y: (pos.y + this.translate[0]) * this.scale
-  } : [(pos[0] + this.translate[1]) * this.scale,
-    (pos[1] + this.translate[1]) * this.scale
-  ];
-};
 
 CanvasEvent.prototype.getObjectAt = function(pos) {
   //TODO optimize with selection on visible items and a treemap ?
@@ -146,12 +136,6 @@ CanvasEvent.prototype.getObjectAt = function(pos) {
         if (bestSource.distance <= 5 || bestTarget.distance <= 5) {
           return rel;
         }
-        // var path = rel.canvasPath2D;
-        // var ctx = rel.g.context;
-        // if (ctx.isPointInPath(path, pos.x, pos.y)) {
-        //   log('hit Link');
-        //   return relations[r];
-        // }
       }
     }
   }
@@ -178,44 +162,93 @@ CanvasEvent.prototype.draw = function() {
     var group = relations[r];
     for (var g in group) {
       var rel = group[g];
-      //TODO We can skip the drawing of elements that have moved off the screen:
-      // if (shape.x > this.width || shape.y > this.height ||
-      //   shape.x + shape.w < 0 || shape.y + shape.h < 0) continue;
-
-      //relations of clicked node are drawn at the end ! TODO see if possible to redraw only moving elements !
+      //relations of clicked node are drawn at the end !
       if (this.clicked != null) {
         if (this.clicked.id in rel.connect) {
-          // we draw theses relations at the end
           continue;
         }
       }
-      rel.redraw();
+      //we only draw visible relations
+      if (this.inViewport(rel)) {
+        rel.redraw();
+      }
     }
-  }
-  if (this.clicked != null) {
-    this.clicked.updateConnect();
   }
   var nodes = this.graph.nodes;
   for (var n in nodes) {
     var node = nodes[n];
-    //TODO We can skip the drawing of elements that have moved off the screen:
-    // if (node.x > this.width || node.y > this.height ||
-    //   node.x + node.w < 0 || node.y + node.h < 0) continue;
-
-    //clicked node is drawn at the end ! TODO see if possible to redraw only moving elements !
-    if (node != this.clicked) {
+    // clicked node is drawn at the end ad only visible nodes are drown
+    if (node != this.clicked && this.inViewport(node)) {
       node.redraw();
     }
   }
-  if (this.clicked != null) {
-    this.clicked.redraw();
-    this.clicked.selector.update();
-  }
+  this.canvasData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
   ctx.restore();
 };
+
+CanvasEvent.prototype.inViewport = function(entity) {
+  var entityBox = entity.bBox();
+  if (
+    entityBox.x + entityBox.width >= this.start.x &&
+    entityBox.x <= this.end.x &&
+    entityBox.y + entityBox.height >= this.start.y &&
+    entityBox.y <= this.end.y
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+//set the visible area in canvas coordinates
+CanvasEvent.prototype.setViewport = function() {
+  this.start = this.getOffset();
+  this.end = this.screenToCanvas({
+    x: this.start.x + this.canvas.width,
+    y: this.start.y + this.canvas.height
+  });
+  this.start = this.screenToCanvas(this.start);
+};
+
+CanvasEvent.prototype.drawClicked = function() {
+  log('ClickedRedraw');
+  var ctx = this.ctx;
+  ctx.save();
+  if (d3.event) {
+    this.translate = d3.event.translate ? d3.event.translate : this.translate;
+    this.scale = d3.event.scale ? d3.event.scale : this.scale;
+  }
+  ctx.translate(this.translate[0], this.translate[1]);
+  ctx.scale(this.scale, this.scale);
+  this.clicked.redraw();
+  this.clicked.updateConnect();
+  this.clicked.selector.update();
+  ctx.restore();
+};
+
 // Creates an object with x and y defined, set to the mouse position relative to the state's canvas
 // If you wanna be super-correct this can be tricky, we have to worry about padding and borders
-CanvasEvent.prototype.getMouse = function(e) {
+CanvasEvent.prototype.screenToCanvas = function(e) {
+  var offset = this.getOffset();
+  var x;
+  var y;
+  if (e.pageX) {
+    x = e.pageX;
+    y = e.pageY;
+  } else {
+    x = e.x;
+    y = e.y;
+  }
+  mx = (x - this.translate[0] - offset.x) / this.scale;
+  my = (y - this.translate[1] - offset.y) / this.scale;
+  // We return a simple javascript object (a hash) with x and y defined
+  return {
+    x: mx,
+    y: my
+  };
+};
+
+CanvasEvent.prototype.getOffset = function(e) {
   var html = document.body.parentNode;
   this.htmlTop = html.offsetTop;
   this.htmlLeft = html.offsetLeft;
@@ -237,14 +270,9 @@ CanvasEvent.prototype.getMouse = function(e) {
   // Also add the <html> offsets in case there's a position:fixed bar
   offsetX += this.stylePaddingLeft + this.styleBorderLeft + this.htmlLeft;
   offsetY += this.stylePaddingTop + this.styleBorderTop + this.htmlTop;
-
-  mx = (e.pageX - this.translate[0] - offsetX) / this.scale;
-  my = (e.pageY - this.translate[1] - offsetY) / this.scale;
-
-  // We return a simple javascript object (a hash) with x and y defined
   return {
-    x: mx,
-    y: my
+    x: offsetX,
+    y: offsetY
   };
 };
 
@@ -521,7 +549,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
           $('#SecondColorPicker').hide();
         }
       });
-      if (self.clicked.arrow == id && !self.clicked.arrowOthers ) line.select(".arrow").attr("stroke", "red");
+      if (self.clicked.arrow == id && !self.clicked.arrowOthers) line.select(".arrow").attr("stroke", "red");
     } else if (i == 3) {
       var point = {
         x: (c.x + s * v.ux()),

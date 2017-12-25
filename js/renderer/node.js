@@ -240,6 +240,7 @@ Node.prototype.bBox = function(mode) {
       elm = this.svg.select('circle').node();
     }
     if (!elm) {
+      //TODO: why not elm?
       log(this.svg);
       return;
     }

@@ -81,50 +81,49 @@
 		// 	log('test');
     // 	return confirmationMessage;
     // });
+		window.onload = function () {
+		  main = Interface.get();
+		  Interface.icons = ".json_encode($icons).";
+		  main.init();
+		  $('body').layout({
+		    applyDefaultStyles: true,
+		    west__onresize: function () { $('#west-accordion').accordion('refresh'); },
+		    center__onresize: function () { Interface.get().onWindowSizeChanged(); },
+		    });
+		  $('#west-accordion').accordion('refresh');
+		  var g = new Graph();
+		  main.currentGraph = g;
+		        $( '<li><a href=#graph_'+g.id+'>NewGraph::'+g.id+'</a></li>' ).appendTo( '.center-tabs .ui-tabs-nav' );
+		        $( '.center-tabs' ).tabs( 'refresh' );
+		        $( '<div id=graph_'+g.id+'></div>' ).appendTo( '.center-tabs' );
 
-		$(document).ready(function () {
-			main = Interface.get();
-			Interface.icons = ".json_encode($icons).";
-			main.init();
-			$('body').layout({
-				applyDefaultStyles: true,
-				west__onresize: function () { $('#west-accordion').accordion('refresh'); },
-				center__onresize: function () { Interface.get().onWindowSizeChanged(); },
-				});
-			$('#west-accordion').accordion('refresh');
-			var g = new Graph();
-			main.currentGraph = g;
-            $( '<li><a href=#graph_'+g.id+'>NewGraph::'+g.id+'</a></li>' ).appendTo( '.center-tabs .ui-tabs-nav' );
-            $( '.center-tabs' ).tabs( 'refresh' );
-            $( '<div id=graph_'+g.id+'></div>' ).appendTo( '.center-tabs' );
-
-			$('#graph_'+g.id).data('data', g);
-			g.setRenderer('canvas'); // 'svg' or 'canvas'
-			g.init();
-			var actions = new Array();
-			var n = 10;
-			for (var i = 0; i < n; i++){
-				actions.push([Action.createNode, {e:{x:Math.random()*500,y:Math.random()*500,icon:'img/person/male.png',shape:0}, g:g}]);
-			}
-			Math.floor(Math.random()*3)
-			var linkType = {0:'link', 1:'polygon',2:'box'};
-			for (var i = 0; i < n; i++){
-				var e1 = i+1;
-				var e2 = Math.floor(Math.random()*n)+1;
-				var e3 = Math.floor(Math.random()*n)+1;
-				if (e1 != e2){
-					actions.push([Action.createRelation, {type:linkType[0], linked:[e1, e2], prop:{}, g:g}]);
-				}
-				if (e1 != e3){
-					actions.push([Action.createRelation, {type:linkType[0], linked:[e1, e3], prop:{}, g:g}]);
-				}
-			}
-			g.ctrl.addBatch(actions, 'RandomGraph');
-			g.ctrl.run();
-			Interface.get().updateHistory();
-			//Send size to SVG:
-			Interface.get().onWindowSizeChanged();
-		});
+		  $('#graph_'+g.id).data('data', g);
+		  g.setRenderer('canvas');
+		  g.init();
+		  var actions = [];
+		  var n = 10;
+		  for (var i = 0; i < n; i++){
+		    actions.push([Action.createNode, {e:{x:Math.random()*500,y:Math.random()*500,icon:'img/person/male.png',shape:0}, g:g}]);
+		  }
+		  Math.floor(Math.random()*3);
+		  var linkType = {0:'link', 1:'polygon',2:'box'};
+		  for (i = 0; i < n; i++){
+		    var e1 = i+1;
+		    var e2 = Math.floor(Math.random()*n)+1;
+		    var e3 = Math.floor(Math.random()*n)+1;
+		    if (e1 != e2){
+		      actions.push([Action.createRelation, {type:linkType[0], linked:[e1, e2], prop:{}, g:g}]);
+		    }
+		    if (e1 != e3){
+		      actions.push([Action.createRelation, {type:linkType[0], linked:[e1, e3], prop:{}, g:g}]);
+		    }
+		  }
+		  g.ctrl.addBatch(actions, 'RandomGraph');
+		  g.ctrl.run();
+		  Interface.get().updateHistory();
+		  //Send size to SVG:
+		  Interface.get().onWindowSizeChanged();
+		};
 
 		</SCRIPT>"
 		?>

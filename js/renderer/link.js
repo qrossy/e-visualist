@@ -455,6 +455,34 @@ Link.prototype.getRootMainPath = function() {
   return clink.svg.select(".mainPath");
 };
 
+Link.prototype.bBox = function() {
+  var box = {};
+  for (var c in this.connect) {
+    var entity = this.connect[c];
+    var e = entity.bBox();
+    if (!box.x) {
+      box.x = e.x;
+      box.y = e.y;
+      box.mx = e.x+e.width;
+      box.my = e.y+e.height;
+    } else {
+      if (box.x > e.x) {
+        box.x = e.x;
+      } else {
+        box.mx = e.x+e.width;
+      }
+      if (box.y > e.y) {
+        box.y = e.y;
+      } else {
+        box.my = e.y+e.height;
+      }
+    }
+  }
+  box.width = box.mx-box.x;
+  box.height = box.my - box.y;
+  return box;
+};
+
 Link.getPathIndex = function(segments, point) {
   var dist = [];
   var get = {};
@@ -478,6 +506,7 @@ Link.getDistanceToSegment = function(pi, pj, pc) {
     return Math.sqrt(Vic.norm() * Vic.norm() - n * n);
   }
 };
+
 
 Link.getIntersection = function(entity, point) {
   var bbox = entity.bBox('link');

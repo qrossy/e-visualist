@@ -260,7 +260,7 @@ Interface.prototype.init = function() {
   //toolbar.append($('<span class="ui-icon-grip-dotted-vertical inline_icon">&nbsp;&nbsp;</span>'));
 
   //Layout
-  toolbar.append($('<span class="toolbar_tool ui-widget"><a title="ForceLayout">forceLayout</a></span>')
+  toolbar.append($('<span class="toolbar_tool ui-widget"><a title="ForceLayout">ForceLayout</a></span>')
     .button().click(function(e) {
       e.preventDefault();
       var g = Interface.get().currentGraph;
@@ -289,6 +289,14 @@ Interface.prototype.init = function() {
     $("#visualist_timebar").is(':visible') ? $("#visualist_timebar").hide() : $("#visualist_timebar").show();
     Interface.get().onWindowSizeChanged();
   });
+
+  toolbar.append($('<span class="toolbar_tool ui-widget"><a title="Redraw">Redraw</a></span>')
+    .button().click(function(e) {
+      e.preventDefault();
+      var g = Interface.get().currentGraph;
+      g.redraw();
+    }));
+
   $("#visualist_timebar").hide();
   $("#showTimebar").attr('checked', false);
   $("#showTimebar").button();
@@ -511,6 +519,7 @@ Interface.prototype.onWindowSizeChanged = function() {
   var g = this.currentGraph;
   if (g) {
     var size = this.canvasSize();
+    log(size);
     if (size[0] <= 0 || size[1] <= 0) {
       return;
     }
@@ -581,10 +590,10 @@ Interface.prototype.createIconSelector = function() {
             $el = $(el, context);
             //check that drop position is within the canvas
             if ($el.attr('class') == 'canvas') {
-              var pos = g.canvas.eventHandler.getMouse(event);
+              var pos = g.canvas.eventHandler.screenToCanvas(event);
               var icon = $(this).find('img').attr('src');
               g.createNode({
-                x: pos.x-20,
+                x: pos.x - 20,
                 y: pos.y,
                 icon: icon,
                 shape: Interface.entityType

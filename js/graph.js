@@ -154,6 +154,7 @@ Graph.prototype.setSize = function(size) {
   if (this.isCanvas) {
     this.canvas.attr('width', size[0]);
     this.canvas.attr('height', size[1]);
+    this.canvas.eventHandler.setViewport();
     this.canvas.eventHandler.draw();
   }
 };
