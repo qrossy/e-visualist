@@ -5,10 +5,13 @@
  */
 function CanvasEvent(graph) {
   var self = this;
-  this.verbose = false;
+  this.verbose = true;
   this.graph = graph;
   this.canvas = graph.canvas.node();
-
+  this.visibleEntities = {
+    nodes: [],
+    relations: []
+  }; //storeVisible entities on redraw to optimise selections
   this.scale = 1;
   this.translate = [0, 0];
   var graphZoom = function(event) {
@@ -37,15 +40,16 @@ function CanvasEvent(graph) {
     e.preventDefault();
     return false;
   }, false);
-  // Up, down, and move are for dragging
+
   this.canvas.addEventListener('mousedown', function(e) {
     if (self.verbose) log('Down');
     var pos = self.screenToCanvas(e);
     self.clicked = self.getObjectAt(pos);
     if (self.clicked) {
       if (Interface.addingLink) {
+        if (self.verbose) log('adding Link');
         Interface.addingLink.from = self.clicked;
-        this.addingLinkStartPos = pos;
+        self.addingLinkStartPos = pos;
       } else {
         Interface.get().updateProperties(self.clicked);
         self.dragging = true;
@@ -69,23 +73,25 @@ function CanvasEvent(graph) {
 
     //TODO handling dragging outside of the canvas ... block and panning ?
     if (self.dragging) {
+      e.stopPropagation();
       // We don't want to drag the object by its top-left corner, we want to drag it
       // from where we clicked. Thats why we saved the offset and use it here
       self.clicked.x = pos.x - self.dragoffx;
       self.clicked.y = pos.y - self.dragoffy;
-      self.ctx.putImageData(self.canvasData, 0, 0);
-      //we redraw only the clicked node (the rest is stored in a image in draw)
+      //we redraw only the clicked node (the rest is stored in a image during draw)
       self.drawClicked();
-      e.stopPropagation();
     } else if (Interface.addingLink && Interface.addingLink.from) {
-      // draw links
-      self.draw();
+      e.stopPropagation();
+      self.drawClicked();
+      // draw moving line on AddLink
+      self.ctx.save();
+      self.ctx.translate(self.translate[0], self.translate[1]);
+      self.ctx.scale(self.scale, self.scale);
       self.ctx.strokeStyle = "#ccc";
-      self.ctx.beginPath();
-      self.ctx.moveTo(this.addingLinkStartPos.x, this.addingLinkStartPos.y);
+      self.ctx.moveTo(self.addingLinkStartPos.x, self.addingLinkStartPos.y);
       self.ctx.lineTo(pos.x, pos.y);
       self.ctx.stroke();
-      e.stopPropagation();
+      self.ctx.restore();
     }
 
   }, true);
@@ -97,6 +103,7 @@ function CanvasEvent(graph) {
     if (target != self.clicked && Interface.addingLink) {
       Interface.createRelation(e, [Interface.addingLink.from, target]);
       self.draw();
+      self.drawClicked();
       Interface.addingLink = false;
     } else if (self.clicked && event.which == 3) {
       if (self.clicked.type == 0) {
@@ -114,40 +121,12 @@ function CanvasEvent(graph) {
   }, true);
 }
 
-CanvasEvent.prototype.getObjectAt = function(pos) {
-  //TODO optimize with selection on visible items and a treemap ?
-  var shapes = this.graph.nodes;
-  for (var id in shapes) {
-    if (shapes[id].contains(pos.x, pos.y)) {
-      return shapes[id];
-    }
-  }
-  var relations = this.graph.relations;
-  for (var r in relations) {
-    var group = relations[r];
-    for (var g in group) {
-      var rel = group[g];
-      if (rel.type == 1) { // this is a link
-        var path = rel.svg.select('.mainPath').node();
-        var pathSource = rel.svg.select('.e' + rel.source.id).node();
-        var pathTarget = rel.svg.select('.e' + rel.target.id).node();
-        var bestSource = closestPoint(pathSource, pos);
-        var bestTarget = closestPoint(pathTarget, pos);
-        if (bestSource.distance <= 5 || bestTarget.distance <= 5) {
-          return rel;
-        }
-      }
-    }
-  }
-  return null;
-};
-
-CanvasEvent.prototype.clear = function() {
-  this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-};
-
 CanvasEvent.prototype.draw = function() {
-  log('CanvasRedraw');
+  if (self.verbose) log('CanvasRedraw');
+  this.visibleEntities = {
+    nodes: [],
+    relations: []
+  };
   var ctx = this.ctx;
   ctx.save();
   this.clear();
@@ -162,15 +141,17 @@ CanvasEvent.prototype.draw = function() {
     var group = relations[r];
     for (var g in group) {
       var rel = group[g];
-      //relations of clicked node are drawn at the end !
       if (this.clicked != null) {
-        if (this.clicked.id in rel.connect) {
+        //relations of clicked node are drawn at the end !
+        if (this.clicked.id in rel.connect || this.clicked.id == rel.id) {
+          this.visibleEntities.relations.push(rel);
           continue;
         }
       }
       //we only draw visible relations
       if (this.inViewport(rel)) {
         rel.redraw();
+        this.visibleEntities.relations.push(rel);
       }
     }
   }
@@ -180,12 +161,84 @@ CanvasEvent.prototype.draw = function() {
     // clicked node is drawn at the end ad only visible nodes are drown
     if (node != this.clicked && this.inViewport(node)) {
       node.redraw();
+      this.visibleEntities.nodes.push(node);
     }
   }
   this.canvasData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
   ctx.restore();
 };
 
+CanvasEvent.prototype.drawClicked = function() {
+  if (self.verbose) log('ClickedRedraw');
+  //redraw canvas image
+  this.ctx.putImageData(this.canvasData, 0, 0);
+  //draw clicked entity
+  var ctx = this.ctx;
+  ctx.save();
+  if (d3.event) {
+    this.translate = d3.event.translate ? d3.event.translate : this.translate;
+    this.scale = d3.event.scale ? d3.event.scale : this.scale;
+  }
+  ctx.translate(this.translate[0], this.translate[1]);
+  ctx.scale(this.scale, this.scale);
+  this.clicked.redraw();
+  //add clicked entity to visibleEntities
+  if (this.clicked.type == 0) {
+    this.visibleEntities.nodes.push(this.clicked);
+  } else {
+    this.visibleEntities.relations.push(this.clicked);
+  }
+  //redraw relations if entity is a node
+  if (this.clicked.type == 0) {
+    this.clicked.updateConnect();
+  }
+  //draw selector
+  this.clicked.selector.update();
+  ctx.restore();
+};
+
+//clear the canvas
+CanvasEvent.prototype.clear = function() {
+  this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+};
+
+//Find entity based on position
+CanvasEvent.prototype.getObjectAt = function(pos) {
+  var nodes = this.visibleEntities.nodes;
+  if (!nodes) {
+    return null;
+  }
+  for (var id in nodes) {
+    var node = nodes[id];
+    if (node.contains(pos.x, pos.y)) {
+      return node;
+    }
+  }
+  var relations = this.visibleEntities.relations;
+  if (!relations) {
+    return null;
+  }
+  for (var r in relations) {
+    var rel = relations[r];
+    if (rel.type == 1) { // this is a link
+      var path = rel.svg.select('.mainPath').node();
+      var pathSource = rel.svg.select('.e' + rel.source.id).node();
+      var pathTarget = rel.svg.select('.e' + rel.target.id).node();
+      var bestSource = closestPoint(pathSource, pos);
+      var bestTarget = closestPoint(pathTarget, pos);
+      var dist = rel.width;
+      if (dist <= 5) {
+        dist = 5;
+      }
+      if (bestSource.distance <= dist || bestTarget.distance <= dist) {
+        return rel;
+      }
+    }
+  }
+  return null;
+};
+
+//Check if entity in viewport
 CanvasEvent.prototype.inViewport = function(entity) {
   var entityBox = entity.bBox();
   if (
@@ -196,7 +249,6 @@ CanvasEvent.prototype.inViewport = function(entity) {
   ) {
     return true;
   }
-
   return false;
 };
 
@@ -208,22 +260,6 @@ CanvasEvent.prototype.setViewport = function() {
     y: this.start.y + this.canvas.height
   });
   this.start = this.screenToCanvas(this.start);
-};
-
-CanvasEvent.prototype.drawClicked = function() {
-  log('ClickedRedraw');
-  var ctx = this.ctx;
-  ctx.save();
-  if (d3.event) {
-    this.translate = d3.event.translate ? d3.event.translate : this.translate;
-    this.scale = d3.event.scale ? d3.event.scale : this.scale;
-  }
-  ctx.translate(this.translate[0], this.translate[1]);
-  ctx.scale(this.scale, this.scale);
-  this.clicked.redraw();
-  this.clicked.updateConnect();
-  this.clicked.selector.update();
-  ctx.restore();
 };
 
 // Creates an object with x and y defined, set to the mouse position relative to the state's canvas
@@ -305,7 +341,7 @@ CanvasEvent.prototype.nodePopup = function(event) {
       if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
       Interface.entityType = 0;
       self.clicked.shape = 0;
-      self.draw();
+      self.drawClicked();
     });
   //Box
   svg.append("svg:rect")
@@ -322,7 +358,7 @@ CanvasEvent.prototype.nodePopup = function(event) {
       if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
       Interface.entityType = 1;
       self.clicked.shape = 1;
-      self.draw();
+      self.drawClicked();
     });
   //Circle
   svg.append("svg:circle")
@@ -336,7 +372,7 @@ CanvasEvent.prototype.nodePopup = function(event) {
       if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
       Interface.entityType = 2;
       self.clicked.shape = 2;
-      self.draw();
+      self.drawClicked();
     });
   //Set
   var m = 5,
@@ -362,7 +398,7 @@ CanvasEvent.prototype.nodePopup = function(event) {
     .on('click', function() {
       if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
       self.clicked.set = self.clicked.set ? false : true;
-      self.draw();
+      self.drawClicked();
     });
   svg.select('.set')
     .append("svg:path")
@@ -392,7 +428,7 @@ CanvasEvent.prototype.nodePopup = function(event) {
     .on('click', function() {
       if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
       self.clicked.theme.draw = self.clicked.theme.draw ? false : true;
-      self.draw();
+      self.drawClicked();
     });
 
   var rColor = $('<span class="visualist_linkSelector_color">');
@@ -400,7 +436,7 @@ CanvasEvent.prototype.nodePopup = function(event) {
     e.preventDefault();
     if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
     self.clicked.color = this.title;
-    self.draw();
+    self.drawClicked();
     $('#FirstColorPicker a').css('border-color', '#ffffff');
     $(this).css('border-color', '#444444');
     svg.select('.theme').select('line').attr("stroke", this.title);
@@ -432,7 +468,7 @@ CanvasEvent.prototype.nodePopup = function(event) {
       $("#node-width").val(ui.value);
       self.clicked.h = ui.value * self.clicked.h / self.clicked.w;
       self.clicked.w = ui.value;
-      self.draw();
+      self.drawClicked();
     }
   });
 
@@ -440,10 +476,6 @@ CanvasEvent.prototype.nodePopup = function(event) {
 
   $(div).show();
 };
-
-
-
-
 
 
 CanvasEvent.prototype.linkPopup = function(event) {
@@ -512,7 +544,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (self.clicked.space != 0) {
           self.clicked.removeMainPath();
         }
-        self.draw();
+        self.drawClicked();
         $(this).parent().find('.arrow').each(function() {
           $(this).attr("stroke", "black");
         });
@@ -539,7 +571,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (self.clicked.space != 0) {
           self.clicked.removeMainPath();
         }
-        self.draw();
+        self.drawClicked();
         $(this).parent().find('.arrow').each(function() {
           $(this).attr("stroke", "black");
         });
@@ -565,7 +597,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (self.clicked.space != 0) {
           self.clicked.removeMainPath();
         }
-        self.draw();
+        self.drawClicked();
         $(this).parent().find('.arrow').each(function() {
           $(this).attr("stroke", "black");
         });
@@ -591,7 +623,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (self.clicked.space != 0) {
           self.clicked.addMainPath();
         }
-        self.draw();
+        self.drawClicked();
         $(this).parent().find('.arrow').each(function() {
           $(this).attr("stroke", "black");
         });
@@ -619,7 +651,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
       self.clicked.dasharray = null;
       var dashString = $(this).find('.arrow').attr("stroke-dasharray");
       if (dashString) self.clicked.dasharray = dashString.split(",");
-      self.draw();
+      self.drawClicked();
       $(this).parent().find('.arrow').each(function() {
         $(this).attr("stroke", "black");
       });
@@ -657,7 +689,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
         $("#ratio").val(ui.value);
         self.clicked.ratio = ui.value;
-        self.draw();
+        self.drawClicked();
       }
     });
     $("#ratio").val($("#slider-ratio").slider("value"));
@@ -668,7 +700,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
     e.preventDefault();
     if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
     self.clicked.color = this.title;
-    self.draw();
+    self.drawClicked();
     $('#FirstColorPicker a').css('border-color', '#ffffff');
     $(this).css('border-color', '#444444');
   };
@@ -677,7 +709,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
     e.preventDefault();
     if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
     self.clicked.secondColor = this.title;
-    self.draw();
+    self.drawClicked();
     $('#SecondColorPicker a').css('border-color', '#ffffff');
     $(this).css('border-color', '#444444');
   };

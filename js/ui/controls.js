@@ -20,7 +20,12 @@ function svgSlider(svg, x, y, id, minValue, maxValue, stepValue, param, entity) 
       $("#" + id).val(ui.value);
       entity[param] = ui.value;
       entity.g.hideHelpers();
-      entity.redraw();
+      if (entity.g.isSVG){
+          entity.redraw();
+      }else if (entity.g.isCanvas){
+        entity.g.canvas.eventHandler.drawClicked();
+      }
+
     }
   });
   $("#" + id).val($("#slider-" + id).slider("value"));

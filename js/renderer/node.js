@@ -41,7 +41,8 @@ function Node(params) {
 
 Node.prototype.redraw = function() {
   if (this.g.isCanvas) {
-    var context = this.g.context;
+    var ctx = this.g.context;
+    ctx.lineWidth = 1;
     if (this.shape == 0) {
       //TODO place imge elsewhere to create object once ?
       var img;
@@ -51,20 +52,20 @@ Node.prototype.redraw = function() {
         img = new Image();
         img.src = this.icon;
       }
-      context.drawImage(img, this.x, this.y, this.w, this.h);
+      ctx.drawImage(img, this.x, this.y, this.w, this.h);
     } else if (this.shape == 1) {
       //TODO setRenderer for Box
-      context.beginPath();
-      context.strokeStyle = this.color;
-      context.rect(this.x, this.y, this.w, this.h);
-      context.stroke();
+      ctx.beginPath();
+      ctx.strokeStyle = this.color;
+      ctx.rect(this.x, this.y, this.w, this.h);
+      ctx.stroke();
 
     } else if (this.shape == 2) {
       //TODO setRenderer for Circle
-      context.beginPath();
-      context.strokeStyle = this.color;
-      context.arc(this.x + this.w / 2, this.y + this.h / 2, this.w / 2, 0, 2 * Math.PI);
-      context.stroke();
+      ctx.beginPath();
+      ctx.strokeStyle = this.color;
+      ctx.arc(this.x + this.w / 2, this.y + this.h / 2, this.w / 2, 0, 2 * Math.PI);
+      ctx.stroke();
     }
   } else if (this.g.isSVG) {
     this.svg.attr("transform", "translate(" + this.x + "," + this.y + ")");
@@ -260,6 +261,7 @@ Node.prototype.bBox = function(mode) {
       box.width += (this.set_margin * 2 + this.set_width * 2);
     }
   } else if (this.g.isCanvas) {
+    //TODO Add other elements of nodes to bounding box !
     box = {};
     box.x = this.x;
     box.y = this.y;
