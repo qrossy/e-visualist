@@ -16,9 +16,10 @@ function Graph(params) {
   if (!params) params = {};
   this.id = params.id ? params.id : this.id = Graph.nextId;
 
-  this.all = {};
-  this.nodes = {};
-  this.relations = {};
+  this.all = {};                        //store all entities
+  this.nodes = {};                      //store nodes
+  this.relations = {};                  //store links
+  this.frames = {};                     //store boxes and polygons
   this.ctrl = new Controller(this.all);
   this.name = 'Graph' + this.id;
   this.snapToGrid = true;

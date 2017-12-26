@@ -73,6 +73,8 @@ Action.createRelation = function CreateRelation(params, undo) {
         params.g.relations[params.e.hash()][space] = params.e;
         params.e.space = space;
       }
+    }else{
+      params.g.frames[params.e.id] = params.e;
     }
     Action.add(params, undo);
   } else {

@@ -8,33 +8,46 @@ function CanvasEvent(graph) {
   this.verbose = true;
   this.graph = graph;
   this.canvas = graph.canvas.node();
+  this.ctx = this.canvas.getContext('2d');
+
   this.visibleEntities = {
     nodes: [],
-    relations: []
+    relations: [],
+    frames: []
   }; //storeVisible entities on redraw to optimise selections
+  this.selectedEntities = {
+    nodes: [],
+    relations: [],
+    frames: []
+  }; //store selected entities
+  this.isSelecting = false; // check if rect selection in progress
+  this.selectColor = '#ccc';
+  this.dragging = false; // Keep track of when we are dragging
+  this.clicked = null; // reference to selected entited
+  this.dragoffx = 0; // See mousedown and mousemove events for explanation
+  this.dragoffy = 0;
+
   this.scale = 1;
   this.translate = [0, 0];
+
   var graphZoom = function(event) {
     self.clear();
     self.clicked = null;
     self.setViewport();
     self.draw();
   };
+
   graph.canvas.call(d3.behavior.zoom().on("zoom", graphZoom));
-  this.ctx = this.canvas.getContext('2d');
+
   // This complicates things a little but but fixes mouse co-ordinate problems
   // when there's a border or padding. See getMouse for more detail
   var stylePaddingLeft, stylePaddingTop, styleBorderLeft, styleBorderTop;
   if (document.defaultView && document.defaultView.getComputedStyle) {
-    this.stylePaddingLeft = parseInt(document.defaultView.getComputedStyle(this.canvas, null)['paddingLeft'], 10) || 0;
-    this.stylePaddingTop = parseInt(document.defaultView.getComputedStyle(this.canvas, null)['paddingTop'], 10) || 0;
-    this.styleBorderLeft = parseInt(document.defaultView.getComputedStyle(this.canvas, null)['borderLeftWidth'], 10) || 0;
-    this.styleBorderTop = parseInt(document.defaultView.getComputedStyle(this.canvas, null)['borderTopWidth'], 10) || 0;
+    this.stylePaddingLeft = parseInt(document.defaultView.getComputedStyle(this.canvas, null).paddingLeft, 10) || 0;
+    this.stylePaddingTop = parseInt(document.defaultView.getComputedStyle(this.canvas, null).paddingTop, 10) || 0;
+    this.styleBorderLeft = parseInt(document.defaultView.getComputedStyle(this.canvas, null).borderLeftWidth, 10) || 0;
+    this.styleBorderTop = parseInt(document.defaultView.getComputedStyle(this.canvas, null).borderTopWidth, 10) || 0;
   }
-  this.dragging = false; // Keep track of when we are dragging
-  this.clicked = null;
-  this.dragoffx = 0; // See mousedown and mousemove events for explanation
-  this.dragoffy = 0;
 
   this.canvas.addEventListener('selectstart', function(e) {
     e.preventDefault();
@@ -42,25 +55,28 @@ function CanvasEvent(graph) {
   }, false);
 
   this.canvas.addEventListener('mousedown', function(e) {
+    var ctx = self.ctx;
     if (self.verbose) log('Down');
+    //store current state of canvas
+    self.canvasData = self.ctx.getImageData(0, 0, self.canvas.width, self.canvas.height);
     var pos = self.screenToCanvas(e);
+    self.initPos = pos;
     self.clicked = self.getObjectAt(pos);
     if (self.clicked) {
       if (Interface.addingLink) {
         if (self.verbose) log('adding Link');
         Interface.addingLink.from = self.clicked;
-        self.addingLinkStartPos = pos;
       } else {
         Interface.get().updateProperties(self.clicked);
         self.dragging = true;
         self.dragoffx = pos.x - self.clicked.x;
         self.dragoffy = pos.y - self.clicked.y;
       }
-      //on dragging we redraw only the clicked node (the rest is stored in a image in draw)
-      //on mouse down, we need to redraw all to get the image without the clicked entity
       self.draw();
       self.drawClicked();
     } else {
+      self.clicked = null;
+      // self.draw();
       var div = Interface.get().popupDiv;
       $(div).fadeOut();
     }
@@ -70,7 +86,7 @@ function CanvasEvent(graph) {
   this.canvas.addEventListener('mousemove', function(e) {
     if (self.verbose) log('Move');
     var pos = self.screenToCanvas(e);
-
+    var ctx = self.ctx;
     //TODO handling dragging outside of the canvas ... block and panning ?
     if (self.dragging) {
       e.stopPropagation();
@@ -84,17 +100,47 @@ function CanvasEvent(graph) {
       e.stopPropagation();
       self.drawClicked();
       // draw moving line on AddLink
-      self.ctx.save();
-      self.ctx.translate(self.translate[0], self.translate[1]);
-      self.ctx.scale(self.scale, self.scale);
-      self.ctx.strokeStyle = "#ccc";
-      self.ctx.moveTo(self.addingLinkStartPos.x, self.addingLinkStartPos.y);
-      self.ctx.lineTo(pos.x, pos.y);
-      self.ctx.stroke();
-      self.ctx.restore();
+      ctx.save();
+      ctx.translate(self.translate[0], self.translate[1]);
+      ctx.scale(self.scale, self.scale);
+      ctx.strokeStyle = "#ccc";
+      ctx.moveTo(self.initPos.x, self.initPos.y);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      ctx.restore();
+    } else if (e.which == 1) {
+      e.stopPropagation();
+      ctx.putImageData(self.canvasData, 0, 0);
+      // draw selection rect
+      ctx.save();
+      ctx.translate(self.translate[0], self.translate[1]);
+      ctx.scale(self.scale, self.scale);
+      ctx.beginPath();
+      ctx.strokeStyle = self.selectColor;
+      ctx.setLineDash([3, 4]);
+      ctx.globalAlpha = 0.1;
+      ctx.fillStyle = self.selectColor;
+      ctx.fillRect(self.initPos.x, self.initPos.y, pos.x - self.initPos.x, pos.y - self.initPos.y);
+      ctx.stroke();
+      ctx.restore();
+      self.isSelecting = true;
+      var box = [
+        [Math.min(self.initPos.x, pos.x), Math.min(self.initPos.y, pos.y)],
+        [Math.max(self.initPos.x, pos.x), Math.max(self.initPos.y, pos.y)]
+      ];
+      self.selectedEntities.nodes = self.graph.getNodes(box);
+      for (var n in self.selectedEntities.nodes) {
+        ctx.save();
+        ctx.translate(self.translate[0], self.translate[1]);
+        ctx.scale(self.scale, self.scale);
+        self.selectedEntities.nodes[n].selector.update();
+        ctx.restore();
+      }
     }
 
   }, true);
+
+
   this.canvas.addEventListener('mouseup', function(e) {
     if (self.verbose) log('Up');
     self.dragging = false;
@@ -112,7 +158,17 @@ function CanvasEvent(graph) {
       if (self.clicked.type == 1) {
         self.linkPopup(e);
       }
+    } else if (self.isSelecting) {
+      self.ctx.putImageData(self.canvasData, 0, 0);
+      if (Interface.addingLink && self.selectedEntities.nodes.length > 1) {
+        Interface.createRelation(e, self.selectedEntities.nodes);
+        self.draw();
+        // self.drawClicked();
+        Interface.addingLink = false;
+      }
+      self.isSelecting = false;
     }
+    self.clicked = null;
 
   }, true);
   // double click
@@ -122,10 +178,11 @@ function CanvasEvent(graph) {
 }
 
 CanvasEvent.prototype.draw = function() {
-  if (self.verbose) log('CanvasRedraw');
+  if (this.verbose) log('CanvasRedraw');
   this.visibleEntities = {
     nodes: [],
-    relations: []
+    relations: [],
+    frames: []
   };
   var ctx = this.ctx;
   ctx.save();
@@ -136,6 +193,7 @@ CanvasEvent.prototype.draw = function() {
   }
   ctx.translate(this.translate[0], this.translate[1]);
   ctx.scale(this.scale, this.scale);
+  //draw Links
   var relations = this.graph.relations;
   for (var r in relations) {
     var group = relations[r];
@@ -155,6 +213,24 @@ CanvasEvent.prototype.draw = function() {
       }
     }
   }
+  //draw Polygons and boxes
+  var frames = this.graph.frames;
+  for (var f in frames) {
+    var frame = frames[f];
+    if (this.clicked != null) {
+      //frames of clicked node are drawn at the end !
+      if (this.clicked.id in frame.connect || this.clicked.id == frame.id) {
+        this.visibleEntities.frames.push(frame);
+        continue;
+      }
+    }
+    //we only draw visible relations
+    if (this.inViewport(frame)) {
+      frame.redraw();
+      this.visibleEntities.relations.push(frame);
+    }
+  }
+  //draw nodes
   var nodes = this.graph.nodes;
   for (var n in nodes) {
     var node = nodes[n];
@@ -169,7 +245,7 @@ CanvasEvent.prototype.draw = function() {
 };
 
 CanvasEvent.prototype.drawClicked = function() {
-  if (self.verbose) log('ClickedRedraw');
+  if (this.verbose) log('ClickedRedraw');
   //redraw canvas image
   this.ctx.putImageData(this.canvasData, 0, 0);
   //draw clicked entity
@@ -188,7 +264,7 @@ CanvasEvent.prototype.drawClicked = function() {
   } else {
     this.visibleEntities.relations.push(this.clicked);
   }
-  //redraw relations if entity is a node
+  //redraw relations and frames if entity is a node
   if (this.clicked.type == 0) {
     this.clicked.updateConnect();
   }
