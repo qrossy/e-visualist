@@ -109,3 +109,10 @@ Box.prototype.bBox = function() {
     height: parseInt(h) + 2 * this.bufferWidth
   };
 };
+
+// Determine if a point is inside the shape's bounds
+Box.prototype.contains = function(mx, my) {
+  var box = this.bBox();
+  return (box.x <= mx) && (box.x + box.width >= mx) &&
+    (box.y <= my) && (box.y + box.height >= my);
+};

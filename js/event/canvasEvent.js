@@ -67,7 +67,6 @@ function CanvasEvent(graph) {
         self.dragging = true;
         if (self.selectedEntities.nodes.indexOf(self.clicked) == -1) {
           self.selectedEntities.nodes = [self.clicked];
-
         } else {
           //self.selectedEntities.nodes = [];
         }
@@ -76,6 +75,7 @@ function CanvasEvent(graph) {
       }
     } else {
       self.selectedEntities.nodes = [];
+      self.selectedEntities.frames = self.getFramesAt(pos);
       self.draw();
       // self.draw();
       var div = Interface.get().popupDiv;
@@ -153,15 +153,18 @@ function CanvasEvent(graph) {
     var ctx = self.ctx;
     var pos = self.screenToCanvas(e);
     var target = self.getObjectAt(pos);
-
-
-    if (self.clicked && event.which == 3) {
-      if (self.clicked.type == 0) {
-        self.nodePopup(e);
+    if (event.which == 3) {
+      if (self.clicked) {
+        if (self.clicked.type == 0) {
+          self.nodePopup(e);
+        }
+        if (self.clicked.type == 1) {
+          self.linkPopup(e);
+        }
+      } else if (self.selectedEntities.frames.length > 0) {
+        self.framePopup(e);
       }
-      if (self.clicked.type == 1) {
-        self.linkPopup(e);
-      }
+      return;
     }
     // Handling moving nodes action if handling
     if (self.dragging) {
@@ -196,7 +199,7 @@ function CanvasEvent(graph) {
           color: Interface.addingLink.color
         });
       }
-    // handle selection and add relations on selection
+      // handle selection and add relations on selection
     } else if (self.isSelecting) {
       ctx.putImageData(self.canvasData, 0, 0);
       if (Interface.addingLink && self.selectedEntities.nodes.length > 1) {
@@ -349,10 +352,9 @@ CanvasEvent.prototype.drawSelection = function() {
   if (this.selectedEntities.nodes.length > 0) {
     for (var s in this.selectedEntities.nodes) {
       var selectedNode = this.selectedEntities.nodes[s];
-      selectedNode.redraw();
       selectedNode.updateConnect();
+      selectedNode.redraw();
       selectedNode.selector.update();
-      this.visibleEntities.nodes.push(selectedNode);
     }
   }
   if (this.clicked) {
@@ -378,12 +380,9 @@ CanvasEvent.prototype.clearSelection = function() {
   }; //store selected entities
 };
 
-//Find entity based on position
+//Find entity (a link or a node) based on position
 CanvasEvent.prototype.getObjectAt = function(pos) {
   var nodes = this.visibleEntities.nodes;
-  if (!nodes) {
-    return null;
-  }
   for (var id in nodes) {
     var node = nodes[id];
     if (node.contains(pos.x, pos.y)) {
@@ -391,9 +390,6 @@ CanvasEvent.prototype.getObjectAt = function(pos) {
     }
   }
   var relations = this.visibleEntities.relations;
-  if (!relations) {
-    return null;
-  }
   for (var r in relations) {
     var rel = relations[r];
     if (rel.type == 1) { // this is a link
@@ -412,6 +408,26 @@ CanvasEvent.prototype.getObjectAt = function(pos) {
     }
   }
   return null;
+};
+
+//Find frames (boxes and polygons) based on position
+CanvasEvent.prototype.getFramesAt = function(pos) {
+  var selected = [];
+  var frames = this.visibleEntities.frames;
+  for (var f in frames) {
+    var frame = frames[f];
+    if (frame.type == 3) { // this is a link
+      var inPath = this.ctx.isPointInPath(frame.canvasPath2D, pos.x, pos.y);
+      if (inPath) {
+        selected.push(frame);
+      }
+    } else if (frame.type == 2) {
+      if (frame.contains(pos.x, pos.y)) {
+        selected.push(frame);
+      }
+    }
+  }
+  return selected;
 };
 
 //Check if entity in viewport
@@ -486,6 +502,57 @@ CanvasEvent.prototype.getOffset = function(e) {
     x: offsetX,
     y: offsetY
   };
+};
+
+CanvasEvent.prototype.framePopup = function(event) {
+  var self = this;
+  var div = Interface.get().popupDiv;
+  var scale = 40.0/self.canvas.height;
+  var divWidth = self.canvas.width*scale+220;
+  $(div)
+    .css("left", event.pageX - divWidth/2)
+    .css("top", event.pageY)
+    .css("width", divWidth+"px")
+    .css("border", "1px solid #CCCCCC")
+    .html("")
+    .bind('contextmenu', function(event) {
+      event.preventDefault();
+    });
+
+  var onColor = function(e) {
+    e.preventDefault();
+    if (Interface.modifiedEntity == null) Interface.modifiedEntity = frame.getData();
+    frame.color = this.title;
+    self.draw();
+    $('#Frame' + frame.id + 'ColorPicker a').css('border-color', '#ffffff');
+    $(this).css('border-color', '#444444');
+  };
+  for (var f in self.selectedEntities.frames) {
+    var frame = self.selectedEntities.frames[f];
+    div.append($('<div id="Frame' + frame.id + 'ColorPicker">'));
+    var svg = d3.select("#Frame" + frame.id+ "ColorPicker")
+      .append("svg:svg")
+      .attr("width",self.canvas.width*scale)
+      .attr("height", 40)
+    var path = svg.append("svg:path")
+      .attr("class", "ground")
+      .attr("fill-opacity", 0.5)
+      .attr("stroke-linejoin", "round")
+      .attr("stroke-width", 15)
+      .attr("stroke", "#000")
+      .attr("d", frame.path);
+    path.attr("transform", "scale("+scale+")");
+    var rColor = $('<span class="visualist_linkSelector_color">');
+    for (var i in Interface.colors) {
+      var color = Interface.colors[i];
+      var c = $('<a href="#" title="' + color + '" style="background-color:' + color + '">&nbsp;&nbsp;&nbsp;</a>')
+        .click(onColor);
+      rColor.append(c);
+    }
+    $('#Frame' + frame.id+ 'ColorPicker').append(rColor);
+  }
+
+  $(div).show();
 };
 
 CanvasEvent.prototype.nodePopup = function(event) {

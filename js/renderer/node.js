@@ -272,10 +272,6 @@ Node.prototype.bBox = function(mode) {
       box.x = (this.x - this.set_margin - this.set_width);
       box.width += (this.set_margin * 2 + this.set_width * 2);
     }
-    for (var i in this.labels) {
-      var labelBox = this.labels[i].bBox();
-      log(labelBox);
-    }
   }
 
   return box;

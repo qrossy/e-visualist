@@ -44,15 +44,14 @@ function Label(params) {
 Label.prototype.redraw = function() {
   if (this.e.g.isCanvas) {
     var ctx = this.e.g.context;
-    this.textwidth = ctx.measureText(this.text).width;
+    this.textWidth = ctx.measureText(this.text).width;
     this.h = Label.getTextHeight(this.font);
-    this.x = this.e.w / 2.0;
-    this.y = this.e.h+this.h.height /2.0;
+    this.setPos();
     //TODO Handle label fonts, size, etc...
-    ctx.fillStyle = this.fontColor;
     ctx.font = this.font;
-    ctx.textAlign = 'center';
-    ctx.fillText(this.text, this.e.x + this.x, this.e.y + this.y);
+    // ctx.textAlign = 'center';
+    ctx.fillStyle = this.fontColor;
+    ctx.fillText(this.text, this.e.x + this.x, this.e.y + this.y + this.h.height);
   } else if (this.e.g.isSVG) {
     this.h = $(this.svg.select('div').node())[0].clientHeight;
     if (this.e.type == 0) {
@@ -66,7 +65,6 @@ Label.prototype.redraw = function() {
       this.x = this.e.x - this.textWidth / 2;
       this.y = this.e.y - this.h / 2;
     }
-
     this.svg
       .attr("x", this.x)
       .attr("y", this.y)
@@ -76,8 +74,7 @@ Label.prototype.redraw = function() {
 };
 
 Label.prototype.create = function() {
-  if (this.e.g.isCanvas) {
-  } else if (this.e.g.isSVG) {
+  if (this.e.g.isCanvas) {} else if (this.e.g.isSVG) {
     this.svg = this.e.svg.append("svg:foreignObject");
     this.svg
       .attr("class", "label");
@@ -148,8 +145,8 @@ Label.prototype.bBox = function() {
   this.textWidth = ctx.measureText(this.text).width;
   this.h = Label.getTextHeight(this.font);
   return {
-    x: this.x,
-    y: this.y,
+    x: this.e.x + this.x,
+    y: this.e.y + this.y,
     width: this.textWidth,
     height: this.h.height
   };

@@ -49,7 +49,7 @@ function Polygon(params) {
       svgpoints += parseInt(centers[p][1][0]) + " " + parseInt(centers[p][1][1]) + " ";
     }
     svgpoints += "T " + parseInt(centers[0][0][0]) + " " + parseInt(centers[0][0][1]) + " ";
-
+    this.path = svgpoints;
     if (this.g.isCanvas) {
       var ctx = this.g.context;
       ctx.save();
