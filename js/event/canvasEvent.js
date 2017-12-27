@@ -507,49 +507,70 @@ CanvasEvent.prototype.getOffset = function(e) {
 CanvasEvent.prototype.framePopup = function(event) {
   var self = this;
   var div = Interface.get().popupDiv;
-  var scale = 40.0/self.canvas.height;
-  var divWidth = self.canvas.width*scale+220;
+  var scale = 40.0 / self.canvas.height;
+  var divWidth = self.canvas.width * scale + 260;
   $(div)
-    .css("left", event.pageX - divWidth/2)
+    .css("left", event.pageX - divWidth / 2)
     .css("top", event.pageY)
-    .css("width", divWidth+"px")
+    .css("width", divWidth + "px")
     .css("border", "1px solid #CCCCCC")
     .html("")
     .bind('contextmenu', function(event) {
       event.preventDefault();
     });
 
-  var onColor = function(e) {
-    e.preventDefault();
-    if (Interface.modifiedEntity == null) Interface.modifiedEntity = frame.getData();
-    frame.color = this.title;
-    self.draw();
-    $('#Frame' + frame.id + 'ColorPicker a').css('border-color', '#ffffff');
-    $(this).css('border-color', '#444444');
-  };
   for (var f in self.selectedEntities.frames) {
     var frame = self.selectedEntities.frames[f];
+    var path;
+    if (frame.type == 3) {
+      path = frame.path;
+    } else {
+      var box = frame.bBox();
+      path = "M " + box.x + " " + box.y + " ";
+      path += "L " + (box.x + box.width) + " " + box.y + " ";
+      path += "L " + (box.x + box.width) + " " + (box.y + box.height) + " ";
+      path += "L " + box.x + " " + (box.y + box.height) + " ";
+      path += "T " + box.x + " " + box.y + " ";
+    }
     div.append($('<div id="Frame' + frame.id + 'ColorPicker">'));
-    var svg = d3.select("#Frame" + frame.id+ "ColorPicker")
+    var svg = d3.select("#Frame" + frame.id + "ColorPicker")
       .append("svg:svg")
-      .attr("width",self.canvas.width*scale)
-      .attr("height", 40)
-    var path = svg.append("svg:path")
+      .attr("width", self.canvas.width * scale)
+      .attr("height", 40);
+    var svgpath = svg.append("svg:path")
       .attr("class", "ground")
       .attr("fill-opacity", 0.5)
       .attr("stroke-linejoin", "round")
       .attr("stroke-width", 15)
       .attr("stroke", "#000")
-      .attr("d", frame.path);
-    path.attr("transform", "scale("+scale+")");
+      .attr("d", path);
+    svgpath.attr("transform", "scale(" + scale + ")");
     var rColor = $('<span class="visualist_linkSelector_color">');
     for (var i in Interface.colors) {
       var color = Interface.colors[i];
-      var c = $('<a href="#" title="' + color + '" style="background-color:' + color + '">&nbsp;&nbsp;&nbsp;</a>')
-        .click(onColor);
+      var c = $('<a href="' + f + '" title="' + color + '" style="background-color:' + color + '">&nbsp;&nbsp;&nbsp;</a>')
+        .click(function(e) {
+          e.preventDefault();
+          var ref = $(this).attr('href');
+          var frame = self.selectedEntities.frames[ref];
+          if (Interface.modifiedEntity == null) Interface.modifiedEntity = frame.getData();
+          frame.color = this.title;
+          self.draw();
+          self.drawSelection(); //if a selection is made during popup is shown
+          $('#Frame' + frame.id + 'ColorPicker a').css('border-color', '#ffffff');
+          $(this).css('border-color', '#444444');
+        });
       rColor.append(c);
     }
-    $('#Frame' + frame.id+ 'ColorPicker').append(rColor);
+    $('#Frame' + frame.id + 'ColorPicker').append(rColor);
+    $('#Frame' + frame.id + 'ColorPicker').append($('<a href="' + f + '" title="Delete Frame"><span class="ui-icon ui-icon-close inline_icon"></span>&nbsp;&nbsp;&nbsp;</a>')
+      .button().click(function(e) {
+        e.preventDefault();
+        var g = Interface.get().currentGraph;
+        var ref = $(this).attr('href');
+        var frame = self.selectedEntities.frames[ref];
+        log('delete '+frame.id);
+      }));
   }
 
   $(div).show();
