@@ -73,14 +73,16 @@ Action.createRelation = function CreateRelation(params, undo) {
         params.g.relations[params.e.hash()][space] = params.e;
         params.e.space = space;
       }
-    }else{
+    } else {
       params.g.frames[params.e.id] = params.e;
     }
     Action.add(params, undo);
-  } else {
+  } else { //undo
     Action.add(params, undo);
     if (params.type == 'link') {
       delete params.g.relations[params.e.hash()][params.e.space];
+    } else {
+      delete params.g.frames[params.e.id];
     }
     for (var l in params.linked) {
       params.e.removeConnect(params.linked[l]);

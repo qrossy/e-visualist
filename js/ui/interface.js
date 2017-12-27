@@ -20,6 +20,7 @@ Interface.colors = [
   "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#ffffff"
 ];
 
+Interface.addingEntity = false;
 Interface.addingLink = false;
 Interface.addingCorner = false;
 Interface.entityType = 0;
@@ -317,6 +318,7 @@ Interface.prototype.init = function() {
       $(this).blur();
       var g = Interface.get().currentGraph;
       g.undo();
+      g.redraw();
       Interface.get().updateHistory();
     });
 
@@ -326,6 +328,7 @@ Interface.prototype.init = function() {
       $(this).blur();
       var g = Interface.get().currentGraph;
       g.redo();
+      g.redraw();
       Interface.get().updateHistory();
     });
 
@@ -370,7 +373,7 @@ Interface.prototype.load = function(data) {
  *
  *@param {Entity} The Entity
  */
-Interface.prototype.updateProperties = function(event) {
+Interface.prototype.updateProperties = function(entity) {
   var div = $('.visualist-properties');
   if (!div.is(":visible")) {
     return;
@@ -378,7 +381,6 @@ Interface.prototype.updateProperties = function(event) {
   var g = this.currentGraph;
 
   div.html('');
-  var entity = event.e;
   if (!entity) {
     div.append('<input type="checkbox" id="gridVisible" /><label for="gridVisible">Show grid</label>');
     $("#gridVisible").click(function() {
@@ -506,6 +508,7 @@ Interface.prototype.updateHistory = function(force) {
     }
     $step.bind("click", function(e) {
       g.stepTo(parseInt($(this).attr('id')));
+      g.redraw();
     });
     $('.visualist-history').prepend($step);
   }
@@ -577,6 +580,7 @@ Interface.prototype.createIconSelector = function() {
       $icon.draggable({
         //	use a helper-clone that is appended to 'body' so is not limited by the pane area
         helper: function() {
+          Interface.addingEntity = true;
           return $(this).clone().appendTo('body').css('zIndex', 5).show();
         },
         cursor: 'move',
@@ -599,6 +603,7 @@ Interface.prototype.createIconSelector = function() {
                 shape: Interface.entityType
               });
               g.redraw();
+              Interface.addingEntity = false;
             }
           }
           if (g.isSVG) {
@@ -666,16 +671,7 @@ Interface.prototype.createIconSelector = function() {
   $("#addCorner").button();
 };
 
-Interface.createRelation = function(event, nodes) {
-  var g = Interface.get().currentGraph;
-  var r = g.createRelation(Interface.addingLink.type, nodes, {
-    color: Interface.addingLink.color
-  });
-  if (Interface.addingLink.type == 'link') {
-    //TODO Rredo popup for links
-    // event.path = r.svg.select(r.source ? '.e' + r.source.id : 'path').node();
-    // r.eventHandler.creationPopup(event);
-  }
+Interface.resetAddRelations = function() {
   $(".visualist_linkSelector_type").find('input').each(function() {
     $(this).attr('checked', false);
     $(this).button('refresh');

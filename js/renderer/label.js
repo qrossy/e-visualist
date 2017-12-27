@@ -12,6 +12,8 @@ function Label(params) {
   this.linkPath = params.linkPath ? params.linkPath : null;
   this.ratio = params.ratio ? params.ratio : 0.5;
   this.text = params.text ? params.text : 'Label';
+  this.font = params.font ? params.font : '10px Arial';
+  this.fontColor = params.fontColor ? params.fontColor : 'grey';
   this.textWidth = params.textWidth ? params.textWidth : 35;
   this.fixedWidth = params.fixedWidth ? params.fixedWidth : false;
   delete params;
@@ -20,7 +22,7 @@ function Label(params) {
     return {
       e: this.e.id, // Reference to connected Entity
       x: this.x, // xPos on Graph
-      y: this.y, // yPos on Graph$
+      y: this.y, // yPos on Graph
       pos: this.pos, // Node anchor (String from '1' to '9')
       linkPath: this.linkPath, // Link Path
       ratio: this.ratio, // Link anchor (Float 0 to 1)
@@ -41,13 +43,16 @@ function Label(params) {
 
 Label.prototype.redraw = function() {
   if (this.e.g.isCanvas) {
-		var context = this.e.g.context;
-		//TODO Handle label fonts, size, etc...
-		var size = 10;
-		context.fillStyle = "grey";
-		context.font = size+"px Arial";
-		context.textAlign = 'center'
-		context.fillText(this.text, this.e.x+this.e.h / 2.0, this.e.y+this.e.w+size);
+    var ctx = this.e.g.context;
+    this.textwidth = ctx.measureText(this.text).width;
+    this.h = Label.getTextHeight(this.font);
+    this.x = this.e.w / 2.0;
+    this.y = this.e.h+this.h.height /2.0;
+    //TODO Handle label fonts, size, etc...
+    ctx.fillStyle = this.fontColor;
+    ctx.font = this.font;
+    ctx.textAlign = 'center';
+    ctx.fillText(this.text, this.e.x + this.x, this.e.y + this.y);
   } else if (this.e.g.isSVG) {
     this.h = $(this.svg.select('div').node())[0].clientHeight;
     if (this.e.type == 0) {
@@ -72,7 +77,6 @@ Label.prototype.redraw = function() {
 
 Label.prototype.create = function() {
   if (this.e.g.isCanvas) {
-
   } else if (this.e.g.isSVG) {
     this.svg = this.e.svg.append("svg:foreignObject");
     this.svg
@@ -140,11 +144,14 @@ Label.prototype.create = function() {
 };
 
 Label.prototype.bBox = function() {
+  var ctx = this.e.g.context;
+  this.textWidth = ctx.measureText(this.text).width;
+  this.h = Label.getTextHeight(this.font);
   return {
-    x: (this.e.x + this.x),
-    y: (this.e.y + this.y),
+    x: this.x,
+    y: this.y,
     width: this.textWidth,
-    height: this.h
+    height: this.h.height
   };
 };
 
@@ -418,4 +425,30 @@ Label.prototype.setPos = function() {
       this.y = this.e.h;
       break;
   }
+};
+
+Label.getTextHeight = function(font) {
+  var result = {};
+  var text = $('<span>Hg</span>').css({
+    fontFamily: font
+  });
+  var block = $('<div style="display: inline-block; width: 1px; height: 0px;"></div>');
+  var div = $('<div></div>');
+  div.append(text, block);
+  var body = $('body');
+  body.append(div);
+  try {
+    block.css({
+      verticalAlign: 'baseline'
+    });
+    result.ascent = block.offset().top - text.offset().top;
+    block.css({
+      verticalAlign: 'bottom'
+    });
+    result.height = block.offset().top - text.offset().top;
+    result.descent = result.height - result.ascent;
+  } finally {
+    div.remove();
+  }
+  return result;
 };

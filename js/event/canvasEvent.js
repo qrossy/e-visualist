@@ -21,20 +21,17 @@ function CanvasEvent(graph) {
     frames: []
   }; //store selected entities
   this.isSelecting = false; // check if rect selection in progress
+  this.clicked = null;
   this.selectColor = '#ccc';
   this.dragging = false; // Keep track of when we are dragging
-  this.clicked = null; // reference to selected entited
-  this.dragoffx = 0; // See mousedown and mousemove events for explanation
-  this.dragoffy = 0;
-
   this.scale = 1;
   this.translate = [0, 0];
 
   var graphZoom = function(event) {
     self.clear();
-    self.clicked = null;
     self.setViewport();
     self.draw();
+    self.drawSelection();
   };
 
   graph.canvas.call(d3.behavior.zoom().on("zoom", graphZoom));
@@ -55,31 +52,36 @@ function CanvasEvent(graph) {
   }, false);
 
   this.canvas.addEventListener('mousedown', function(e) {
-    var ctx = self.ctx;
     if (self.verbose) log('Down');
-    //store current state of canvas
-    self.canvasData = self.ctx.getImageData(0, 0, self.canvas.width, self.canvas.height);
     var pos = self.screenToCanvas(e);
-    self.initPos = pos;
+    var ctx = self.ctx;
+    self.initPos = pos; //last position, will be updated on each move
+    self.startPos = pos; //first position, will not be updeate on move
     self.clicked = self.getObjectAt(pos);
     if (self.clicked) {
       if (Interface.addingLink) {
-        if (self.verbose) log('adding Link');
         Interface.addingLink.from = self.clicked;
-      } else {
-        Interface.get().updateProperties(self.clicked);
+        self.clearSelection();
+        self.draw();
+      } else if (self.clicked.type == 0) {
         self.dragging = true;
-        self.dragoffx = pos.x - self.clicked.x;
-        self.dragoffy = pos.y - self.clicked.y;
+        if (self.selectedEntities.nodes.indexOf(self.clicked) == -1) {
+          self.selectedEntities.nodes = [self.clicked];
+
+        } else {
+          //self.selectedEntities.nodes = [];
+        }
+        self.draw();
+        self.drawSelection();
       }
-      self.draw();
-      self.drawClicked();
     } else {
-      self.clicked = null;
+      self.selectedEntities.nodes = [];
+      self.draw();
       // self.draw();
       var div = Interface.get().popupDiv;
       $(div).fadeOut();
     }
+    Interface.get().updateProperties(self.clicked);
   }, true);
 
 
@@ -92,23 +94,28 @@ function CanvasEvent(graph) {
       e.stopPropagation();
       // We don't want to drag the object by its top-left corner, we want to drag it
       // from where we clicked. Thats why we saved the offset and use it here
-      self.clicked.x = pos.x - self.dragoffx;
-      self.clicked.y = pos.y - self.dragoffy;
+      for (var n in self.selectedEntities.nodes) {
+        var node = self.selectedEntities.nodes[n];
+        node.x -= self.initPos.x - pos.x;
+        node.y -= self.initPos.y - pos.y;
+      }
+      self.initPos = pos;
       //we redraw only the clicked node (the rest is stored in a image during draw)
-      self.drawClicked();
+      self.drawSelection();
     } else if (Interface.addingLink && Interface.addingLink.from) {
       e.stopPropagation();
-      self.drawClicked();
+      ctx.putImageData(self.canvasData, 0, 0);
       // draw moving line on AddLink
       ctx.save();
       ctx.translate(self.translate[0], self.translate[1]);
       ctx.scale(self.scale, self.scale);
+      ctx.beginPath();
       ctx.strokeStyle = "#ccc";
       ctx.moveTo(self.initPos.x, self.initPos.y);
       ctx.lineTo(pos.x, pos.y);
       ctx.stroke();
       ctx.restore();
-    } else if (e.which == 1) {
+    } else if (e.which == 1 && !Interface.addingEntity) {
       e.stopPropagation();
       ctx.putImageData(self.canvasData, 0, 0);
       // draw selection rect
@@ -143,32 +150,81 @@ function CanvasEvent(graph) {
 
   this.canvas.addEventListener('mouseup', function(e) {
     if (self.verbose) log('Up');
-    self.dragging = false;
+    var ctx = self.ctx;
     var pos = self.screenToCanvas(e);
     var target = self.getObjectAt(pos);
-    if (target != self.clicked && Interface.addingLink) {
-      Interface.createRelation(e, [Interface.addingLink.from, target]);
-      self.draw();
-      self.drawClicked();
-      Interface.addingLink = false;
-    } else if (self.clicked && event.which == 3) {
+
+
+    if (self.clicked && event.which == 3) {
       if (self.clicked.type == 0) {
         self.nodePopup(e);
       }
       if (self.clicked.type == 1) {
         self.linkPopup(e);
       }
-    } else if (self.isSelecting) {
-      self.ctx.putImageData(self.canvasData, 0, 0);
-      if (Interface.addingLink && self.selectedEntities.nodes.length > 1) {
-        Interface.createRelation(e, self.selectedEntities.nodes);
+    }
+    // Handling moving nodes action if handling
+    if (self.dragging) {
+      if (pos.x != self.startPos.x || pos.y != self.startPos.y) {
+        var actions = [];
+        for (var id in self.selectedEntities.nodes) {
+          var node = self.selectedEntities.nodes[id];
+          //store new position to handle undo/redo
+          var newPos = Object.assign({}, node);
+          //reset starting position to handle undo/redo
+          node.x += self.startPos.x - pos.x;
+          node.y += self.startPos.y - pos.y;
+          actions.push([Action.move, {
+            e: node,
+            pos: {
+              x: newPos.x,
+              y: newPos.y
+            }
+          }]);
+        }
+        self.graph.ctrl.addBatch(actions, 'Move');
+        self.graph.ctrl.run();
+        self.clearSelection();
         self.draw();
-        // self.drawClicked();
-        Interface.addingLink = false;
+      }
+      self.dragging = false;
+    }
+    // handle add Link
+    else if (target && !self.isSelecting) {
+      if (Interface.addingLink && target.type == 0 && target != self.clicked) {
+        self.graph.createRelation(Interface.addingLink.type, [Interface.addingLink.from, target], {
+          color: Interface.addingLink.color
+        });
+      }
+    // handle selection and add relations on selection
+    } else if (self.isSelecting) {
+      ctx.putImageData(self.canvasData, 0, 0);
+      if (Interface.addingLink && self.selectedEntities.nodes.length > 1) {
+        if (self.selectedEntities.nodes.length > 2 && Interface.addingLink.type == 'link') {
+          //TODO draw MLink
+        } else {
+          self.graph.createRelation(Interface.addingLink.type, self.selectedEntities.nodes, {
+            color: Interface.addingLink.color
+          });
+        }
+
+      } else {
+        for (var n in self.selectedEntities.nodes) {
+          ctx.save();
+          ctx.translate(self.translate[0], self.translate[1]);
+          ctx.scale(self.scale, self.scale);
+          self.selectedEntities.nodes[n].selector.update();
+          ctx.restore();
+        }
       }
       self.isSelecting = false;
     }
-    self.clicked = null;
+    if (Interface.addingLink) {
+      self.clearSelection();
+      self.draw();
+      Interface.addingLink = false;
+      Interface.resetAddRelations();
+    }
 
   }, true);
   // double click
@@ -193,21 +249,35 @@ CanvasEvent.prototype.draw = function() {
   }
   ctx.translate(this.translate[0], this.translate[1]);
   ctx.scale(this.scale, this.scale);
+  var draw; // to check is drawing or not
   //draw Links
   var relations = this.graph.relations;
   for (var r in relations) {
     var group = relations[r];
     for (var g in group) {
       var rel = group[g];
-      if (this.clicked != null) {
-        //relations of clicked node are drawn at the end !
-        if (this.clicked.id in rel.connect || this.clicked.id == rel.id) {
+      draw = true;
+      if (this.clicked) {
+        if (this.clicked.id == rel.id) {
+          draw = false;
           this.visibleEntities.relations.push(rel);
           continue;
         }
       }
+      if (this.selectedEntities.nodes.length > 0) {
+        for (var n in this.selectedEntities.nodes) {
+          var node = this.selectedEntities.nodes[n];
+          //relations of clicked node are drawn at the end !
+          if (node.id in rel.connect) {
+            draw = false;
+            this.visibleEntities.relations.push(rel);
+            continue;
+          }
+        }
+        // || this.clicked.id == rel.id
+      }
       //we only draw visible relations
-      if (this.inViewport(rel)) {
+      if (this.inViewport(rel) && draw) {
         rel.redraw();
         this.visibleEntities.relations.push(rel);
       }
@@ -217,25 +287,44 @@ CanvasEvent.prototype.draw = function() {
   var frames = this.graph.frames;
   for (var f in frames) {
     var frame = frames[f];
-    if (this.clicked != null) {
-      //frames of clicked node are drawn at the end !
-      if (this.clicked.id in frame.connect || this.clicked.id == frame.id) {
+    draw = true;
+    if (this.clicked) {
+      if (this.clicked.id == frame.id) {
+        draw = false;
         this.visibleEntities.frames.push(frame);
         continue;
       }
     }
-    //we only draw visible relations
-    if (this.inViewport(frame)) {
+    if (this.selectedEntities.nodes.length > 0) {
+      for (var n in this.selectedEntities.nodes) {
+        var node = this.selectedEntities.nodes[n];
+        //frames of clicked node are drawn at the end !
+        if (node.id in frame.connect) {
+          this.visibleEntities.frames.push(frame);
+          draw = false;
+          continue;
+        }
+      }
+      // || this.clicked.id == frame.id
+    }
+    //we only draw visible frames
+    if (this.inViewport(frame) && draw) {
       frame.redraw();
-      this.visibleEntities.relations.push(frame);
+      this.visibleEntities.frames.push(frame);
     }
   }
   //draw nodes
   var nodes = this.graph.nodes;
   for (var n in nodes) {
     var node = nodes[n];
-    // clicked node is drawn at the end ad only visible nodes are drown
-    if (node != this.clicked && this.inViewport(node)) {
+    draw = true;
+    //clicked node are drawn at the end !
+    if (this.selectedEntities.nodes.indexOf(node) != -1) {
+      this.visibleEntities.nodes.push(node);
+      draw = false;
+      continue;
+    } //we only draw visible nodes
+    if (this.inViewport(node) && draw) {
       node.redraw();
       this.visibleEntities.nodes.push(node);
     }
@@ -244,7 +333,7 @@ CanvasEvent.prototype.draw = function() {
   ctx.restore();
 };
 
-CanvasEvent.prototype.drawClicked = function() {
+CanvasEvent.prototype.drawSelection = function() {
   if (this.verbose) log('ClickedRedraw');
   //redraw canvas image
   this.ctx.putImageData(this.canvasData, 0, 0);
@@ -257,25 +346,36 @@ CanvasEvent.prototype.drawClicked = function() {
   }
   ctx.translate(this.translate[0], this.translate[1]);
   ctx.scale(this.scale, this.scale);
-  this.clicked.redraw();
-  //add clicked entity to visibleEntities
-  if (this.clicked.type == 0) {
-    this.visibleEntities.nodes.push(this.clicked);
-  } else {
-    this.visibleEntities.relations.push(this.clicked);
+  if (this.selectedEntities.nodes.length > 0) {
+    for (var s in this.selectedEntities.nodes) {
+      var selectedNode = this.selectedEntities.nodes[s];
+      selectedNode.redraw();
+      selectedNode.updateConnect();
+      selectedNode.selector.update();
+      this.visibleEntities.nodes.push(selectedNode);
+    }
   }
-  //redraw relations and frames if entity is a node
-  if (this.clicked.type == 0) {
-    this.clicked.updateConnect();
+  if (this.clicked) {
+    if (this.clicked.type != 0) {
+      this.clicked.redraw();
+      this.clicked.selector.update();
+    }
   }
-  //draw selector
-  this.clicked.selector.update();
   ctx.restore();
 };
 
 //clear the canvas
 CanvasEvent.prototype.clear = function() {
   this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+};
+
+//clear selected entities
+CanvasEvent.prototype.clearSelection = function() {
+  this.selectedEntities = {
+    nodes: [],
+    relations: [],
+    frames: []
+  }; //store selected entities
 };
 
 //Find entity based on position
@@ -417,7 +517,7 @@ CanvasEvent.prototype.nodePopup = function(event) {
       if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
       Interface.entityType = 0;
       self.clicked.shape = 0;
-      self.drawClicked();
+      self.drawSelection();
     });
   //Box
   svg.append("svg:rect")
@@ -434,7 +534,7 @@ CanvasEvent.prototype.nodePopup = function(event) {
       if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
       Interface.entityType = 1;
       self.clicked.shape = 1;
-      self.drawClicked();
+      self.drawSelection();
     });
   //Circle
   svg.append("svg:circle")
@@ -448,7 +548,7 @@ CanvasEvent.prototype.nodePopup = function(event) {
       if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
       Interface.entityType = 2;
       self.clicked.shape = 2;
-      self.drawClicked();
+      self.drawSelection();
     });
   //Set
   var m = 5,
@@ -474,7 +574,7 @@ CanvasEvent.prototype.nodePopup = function(event) {
     .on('click', function() {
       if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
       self.clicked.set = self.clicked.set ? false : true;
-      self.drawClicked();
+      self.drawSelection();
     });
   svg.select('.set')
     .append("svg:path")
@@ -504,7 +604,7 @@ CanvasEvent.prototype.nodePopup = function(event) {
     .on('click', function() {
       if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
       self.clicked.theme.draw = self.clicked.theme.draw ? false : true;
-      self.drawClicked();
+      self.drawSelection();
     });
 
   var rColor = $('<span class="visualist_linkSelector_color">');
@@ -512,7 +612,7 @@ CanvasEvent.prototype.nodePopup = function(event) {
     e.preventDefault();
     if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
     self.clicked.color = this.title;
-    self.drawClicked();
+    self.drawSelection();
     $('#FirstColorPicker a').css('border-color', '#ffffff');
     $(this).css('border-color', '#444444');
     svg.select('.theme').select('line').attr("stroke", this.title);
@@ -544,7 +644,7 @@ CanvasEvent.prototype.nodePopup = function(event) {
       $("#node-width").val(ui.value);
       self.clicked.h = ui.value * self.clicked.h / self.clicked.w;
       self.clicked.w = ui.value;
-      self.drawClicked();
+      self.drawSelection();
     }
   });
 
@@ -620,7 +720,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (self.clicked.space != 0) {
           self.clicked.removeMainPath();
         }
-        self.drawClicked();
+        self.drawSelection();
         $(this).parent().find('.arrow').each(function() {
           $(this).attr("stroke", "black");
         });
@@ -647,7 +747,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (self.clicked.space != 0) {
           self.clicked.removeMainPath();
         }
-        self.drawClicked();
+        self.drawSelection();
         $(this).parent().find('.arrow').each(function() {
           $(this).attr("stroke", "black");
         });
@@ -673,7 +773,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (self.clicked.space != 0) {
           self.clicked.removeMainPath();
         }
-        self.drawClicked();
+        self.drawSelection();
         $(this).parent().find('.arrow').each(function() {
           $(this).attr("stroke", "black");
         });
@@ -699,7 +799,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (self.clicked.space != 0) {
           self.clicked.addMainPath();
         }
-        self.drawClicked();
+        self.drawSelection();
         $(this).parent().find('.arrow').each(function() {
           $(this).attr("stroke", "black");
         });
@@ -727,7 +827,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
       self.clicked.dasharray = null;
       var dashString = $(this).find('.arrow').attr("stroke-dasharray");
       if (dashString) self.clicked.dasharray = dashString.split(",");
-      self.drawClicked();
+      self.drawSelection();
       $(this).parent().find('.arrow').each(function() {
         $(this).attr("stroke", "black");
       });
@@ -765,7 +865,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
         $("#ratio").val(ui.value);
         self.clicked.ratio = ui.value;
-        self.drawClicked();
+        self.drawSelection();
       }
     });
     $("#ratio").val($("#slider-ratio").slider("value"));
@@ -776,7 +876,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
     e.preventDefault();
     if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
     self.clicked.color = this.title;
-    self.drawClicked();
+    self.drawSelection();
     $('#FirstColorPicker a').css('border-color', '#ffffff');
     $(this).css('border-color', '#444444');
   };
@@ -785,7 +885,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
     e.preventDefault();
     if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
     self.clicked.secondColor = this.title;
-    self.drawClicked();
+    self.drawSelection();
     $('#SecondColorPicker a').css('border-color', '#ffffff');
     $(this).css('border-color', '#444444');
   };

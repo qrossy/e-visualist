@@ -320,6 +320,7 @@ Graph.prototype.redraw = function() {
     }
   } else if (this.isCanvas) {
     this.canvas.eventHandler.draw();
+    this.canvas.eventHandler.drawSelection();
   }
   // for (var i in this.all){
   // if (this.all[i].type != 0)
