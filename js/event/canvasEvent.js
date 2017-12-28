@@ -77,9 +77,10 @@ function CanvasEvent(graph) {
       self.selectedEntities.nodes = [];
       self.selectedEntities.frames = self.getFramesAt(pos);
       self.draw();
-      // self.draw();
-      var div = Interface.get().popupDiv;
-      $(div).fadeOut();
+      if (event.which != 3) {
+        var div = Interface.get().popupDiv;
+        $(div).fadeOut();
+      }
     }
     Interface.get().updateProperties(self.clicked);
   }, true);
@@ -87,6 +88,10 @@ function CanvasEvent(graph) {
 
   this.canvas.addEventListener('mousemove', function(e) {
     if (self.verbose) log('Move');
+    //prevent events if popup is visible (usefull when dragging it)
+    if ($(Interface.get().popupDiv).css('display') === 'block') {
+      return;
+    }
     var pos = self.screenToCanvas(e);
     var ctx = self.ctx;
     //TODO handling dragging outside of the canvas ... block and panning ?
@@ -253,6 +258,35 @@ CanvasEvent.prototype.draw = function() {
   ctx.translate(this.translate[0], this.translate[1]);
   ctx.scale(this.scale, this.scale);
   var draw; // to check is drawing or not
+  //draw Polygons and boxes
+  var frames = this.graph.frames;
+  for (var f in frames) {
+    var frame = frames[f];
+    draw = true;
+    if (this.clicked) {
+      if (this.clicked.id == frame.id) {
+        draw = false;
+        this.visibleEntities.frames.push(frame);
+        continue;
+      }
+    }
+    if (this.selectedEntities.nodes.length > 0) {
+      for (var n in this.selectedEntities.nodes) {
+        var node = this.selectedEntities.nodes[n];
+        //frames of clicked node are drawn at the end !
+        if (node.id in frame.connect) {
+          this.visibleEntities.frames.push(frame);
+          draw = false;
+          continue;
+        }
+      }
+    }
+    //we only draw visible frames
+    if (this.inViewport(frame) && draw) {
+      frame.redraw();
+      this.visibleEntities.frames.push(frame);
+    }
+  }
   //draw Links
   var relations = this.graph.relations;
   for (var r in relations) {
@@ -277,7 +311,6 @@ CanvasEvent.prototype.draw = function() {
             continue;
           }
         }
-        // || this.clicked.id == rel.id
       }
       //we only draw visible relations
       if (this.inViewport(rel) && draw) {
@@ -286,36 +319,7 @@ CanvasEvent.prototype.draw = function() {
       }
     }
   }
-  //draw Polygons and boxes
-  var frames = this.graph.frames;
-  for (var f in frames) {
-    var frame = frames[f];
-    draw = true;
-    if (this.clicked) {
-      if (this.clicked.id == frame.id) {
-        draw = false;
-        this.visibleEntities.frames.push(frame);
-        continue;
-      }
-    }
-    if (this.selectedEntities.nodes.length > 0) {
-      for (var n in this.selectedEntities.nodes) {
-        var node = this.selectedEntities.nodes[n];
-        //frames of clicked node are drawn at the end !
-        if (node.id in frame.connect) {
-          this.visibleEntities.frames.push(frame);
-          draw = false;
-          continue;
-        }
-      }
-      // || this.clicked.id == frame.id
-    }
-    //we only draw visible frames
-    if (this.inViewport(frame) && draw) {
-      frame.redraw();
-      this.visibleEntities.frames.push(frame);
-    }
-  }
+
   //draw nodes
   var nodes = this.graph.nodes;
   for (var n in nodes) {
@@ -545,7 +549,7 @@ CanvasEvent.prototype.framePopup = function(event) {
       .attr("stroke", "#000")
       .attr("d", path);
     svgpath.attr("transform", "scale(" + scale + ")");
-    var rColor = $('<span class="visualist_linkSelector_color">');
+    var rColor = $('<span class="visualist_linkSelector_color" style="line-height: 40px;">');
     for (var i in Interface.colors) {
       var color = Interface.colors[i];
       var c = $('<a href="' + f + '" title="' + color + '" style="background-color:' + color + '">&nbsp;&nbsp;&nbsp;</a>')
@@ -563,13 +567,20 @@ CanvasEvent.prototype.framePopup = function(event) {
       rColor.append(c);
     }
     $('#Frame' + frame.id + 'ColorPicker').append(rColor);
-    $('#Frame' + frame.id + 'ColorPicker').append($('<a href="' + f + '" title="Delete Frame"><span class="ui-icon ui-icon-close inline_icon"></span>&nbsp;&nbsp;&nbsp;</a>')
+    $('#Frame' + frame.id + 'ColorPicker').append($('<a href="' + f + '" title="Delete Frame" style="height: 25px;"><span class="ui-icon ui-icon-close"></span>&nbsp;&nbsp;&nbsp;</a>')
       .button().click(function(e) {
         e.preventDefault();
         var g = Interface.get().currentGraph;
         var ref = $(this).attr('href');
         var frame = self.selectedEntities.frames[ref];
-        log('delete '+frame.id);
+        g.ctrl.addAction(Action.removeFrame, {
+          g: g,
+          e: frame
+        });
+        g.ctrl.run();
+        self.clearSelection();
+        self.draw();
+        $(div).hide();
       }));
   }
 
@@ -808,6 +819,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (self.clicked.space != 0) {
           self.clicked.removeMainPath();
         }
+        self.draw();
         self.drawSelection();
         $(this).parent().find('.arrow').each(function() {
           $(this).attr("stroke", "black");
@@ -835,6 +847,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (self.clicked.space != 0) {
           self.clicked.removeMainPath();
         }
+        self.draw();
         self.drawSelection();
         $(this).parent().find('.arrow').each(function() {
           $(this).attr("stroke", "black");
@@ -861,6 +874,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (self.clicked.space != 0) {
           self.clicked.removeMainPath();
         }
+        self.draw();
         self.drawSelection();
         $(this).parent().find('.arrow').each(function() {
           $(this).attr("stroke", "black");
@@ -887,6 +901,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (self.clicked.space != 0) {
           self.clicked.addMainPath();
         }
+        self.draw();
         self.drawSelection();
         $(this).parent().find('.arrow').each(function() {
           $(this).attr("stroke", "black");
@@ -915,6 +930,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
       self.clicked.dasharray = null;
       var dashString = $(this).find('.arrow').attr("stroke-dasharray");
       if (dashString) self.clicked.dasharray = dashString.split(",");
+      self.draw();
       self.drawSelection();
       $(this).parent().find('.arrow').each(function() {
         $(this).attr("stroke", "black");
@@ -953,6 +969,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
         if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
         $("#ratio").val(ui.value);
         self.clicked.ratio = ui.value;
+        self.draw();
         self.drawSelection();
       }
     });
@@ -964,6 +981,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
     e.preventDefault();
     if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
     self.clicked.color = this.title;
+    self.draw();
     self.drawSelection();
     $('#FirstColorPicker a').css('border-color', '#ffffff');
     $(this).css('border-color', '#444444');
@@ -973,6 +991,7 @@ CanvasEvent.prototype.linkPopup = function(event) {
     e.preventDefault();
     if (Interface.modifiedEntity == null) Interface.modifiedEntity = self.clicked.getData();
     self.clicked.secondColor = this.title;
+    self.draw();
     self.drawSelection();
     $('#SecondColorPicker a').css('border-color', '#ffffff');
     $(this).css('border-color', '#444444');

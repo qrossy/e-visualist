@@ -321,15 +321,19 @@ Action.removeLink = function RemoveLink(params, undo) {
  *
  *@param {e:Box || Polygon, g:Graph} params
  */
-Action.removeBox = function RemoveBox(params, undo) {
+Action.removeFrame = function RemoveFrame(params, undo) {
   if (!undo) {
-    params.e.svg.remove();
+    if (params.g.isSVG) {
+      params.e.svg.remove();
+    }
+    delete params.g.frames[params.e.id];
     delete params.g.all[params.e.id];
     for (var id in params.e.connect) {
       delete params.e.connect[id].connect[params.e.id];
     }
   } else {
     params.g.all[params.e.id] = params.e;
+    params.g.frames[params.e.id] = params.e;
     params.e.create();
     params.e.redraw();
     for (var id in params.e.connect) {
