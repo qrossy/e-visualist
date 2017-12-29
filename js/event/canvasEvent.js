@@ -20,10 +20,12 @@ function CanvasEvent(graph) {
     relations: [],
     frames: []
   }; //store selected entities
+  this.clicked = null; // clicked entity (nodes or links)
+  this.hitCorner = false; // check if mouse pos is on link corner
+  this.clickedCorner = null; // clicked corner
   this.isSelecting = false; // check if rect selection in progress
-  this.clicked = null;
   this.selectColor = '#ccc';
-  this.dragging = false; // Keep track of when we are dragging
+  this.isDragging = false; // check if dragging
   this.scale = 1;
   this.translate = [0, 0];
 
@@ -36,8 +38,8 @@ function CanvasEvent(graph) {
 
   graph.canvas.call(d3.behavior.zoom().on("zoom", graphZoom));
 
-  // This complicates things a little but but fixes mouse co-ordinate problems
-  // when there's a border or padding. See getMouse for more detail
+  // This complicates things a little but fixes mouse co-ordinate problems
+  // when there's a border or padding. See screentocanvas for more detail
   var stylePaddingLeft, stylePaddingTop, styleBorderLeft, styleBorderTop;
   if (document.defaultView && document.defaultView.getComputedStyle) {
     this.stylePaddingLeft = parseInt(document.defaultView.getComputedStyle(this.canvas, null).paddingLeft, 10) || 0;
@@ -46,30 +48,60 @@ function CanvasEvent(graph) {
     this.styleBorderTop = parseInt(document.defaultView.getComputedStyle(this.canvas, null).borderTopWidth, 10) || 0;
   }
 
-  this.canvas.addEventListener('selectstart', function(e) {
-    e.preventDefault();
-    return false;
-  }, false);
+  this.canvas.addEventListener('contextmenu', function(event) {
+    event.preventDefault();
+  });
 
   this.canvas.addEventListener('mousedown', function(e) {
     if (self.verbose) log('Down');
     var pos = self.screenToCanvas(e);
     var ctx = self.ctx;
     self.initPos = pos; //last position, will be updated on each move
-    self.startPos = pos; //first position, will not be updeate on move
+    self.startPos = pos; //first position, will not be updated on move
     self.clicked = self.getObjectAt(pos);
     if (self.clicked) {
       if (Interface.addingLink) {
+        if (self.verbose) log('AddLink');
         Interface.addingLink.from = self.clicked;
         self.clearSelection();
         self.draw();
+      } else if (Interface.addingCorner && self.clicked.type == 1) {
+        if (self.verbose) log('AddCorner');
+        var id = null;
+        var path;
+        if (self.clicked.connectCount() == 2 && self.clicked.arrow == self.clicked.id) {
+          path = self.clicked.svg.select(".mainPath").node();
+        } else {
+          id = self.clicked.target.id;
+          path = self.clicked.svg.select(".e" + id).node();
+          if (!$(path).attr('d')) {
+            id = self.clicked.source.id;
+            path = self.clicked.svg.select(".e" + id).node();
+          }
+        }
+        var segments = path.getPathData();
+        var index = Link.getPathIndex(segments, pos);
+        var prev = segments.getItem(index - 1);
+        var next = segments.getItem(index);
+        var ratio = Link.vector(prev, pos).norm() / Link.vector(prev, next).norm();
+        self.graph.ctrl.addAction(Action.createCorner, {
+          g: self.graph,
+          e: self.clicked,
+          ratio: ratio,
+          index: index,
+          id: id
+        });
+        self.graph.ctrl.run();
+        self.draw();
+        self.drawSelection();
       } else if (self.clicked.type == 0) {
-        self.dragging = true;
+        self.isDragging = true;
         if (self.selectedEntities.nodes.indexOf(self.clicked) == -1) {
           self.selectedEntities.nodes = [self.clicked];
-        } else {
-          //self.selectedEntities.nodes = [];
-        }
+          self.draw();
+          self.drawSelection();
+        } else {}
+      } else if (self.clicked.type == 1) {
         self.draw();
         self.drawSelection();
       }
@@ -90,15 +122,25 @@ function CanvasEvent(graph) {
     if (self.verbose) log('Move');
     //prevent events if popup is visible (usefull when dragging it)
     if ($(Interface.get().popupDiv).css('display') === 'block') {
+      if (self.verbose) log('Prevent dragging');
       return;
     }
     var pos = self.screenToCanvas(e);
     var ctx = self.ctx;
     //TODO handling dragging outside of the canvas ... block and panning ?
-    if (self.dragging) {
+
+    if (self.hitCorner) {
       e.stopPropagation();
-      // We don't want to drag the object by its top-left corner, we want to drag it
-      // from where we clicked. Thats why we saved the offset and use it here
+      if (self.verbose) log('Corner Dragging');
+      var pathData = self.clickedCorner.path.node().getPathData();
+      pathData[self.clickedCorner.point].x -= self.initPos.x - pos.x;
+      pathData[self.clickedCorner.point].y -= self.initPos.y - pos.y;
+      self.clickedCorner.path.attr("d", pathData.path());
+      self.initPos = pos;
+      self.drawSelection();
+    } else if (self.isDragging) {
+      e.stopPropagation();
+      if (self.verbose) log('Dragging');
       for (var n in self.selectedEntities.nodes) {
         var node = self.selectedEntities.nodes[n];
         node.x -= self.initPos.x - pos.x;
@@ -108,9 +150,9 @@ function CanvasEvent(graph) {
       //we redraw only the clicked node (the rest is stored in a image during draw)
       self.drawSelection();
     } else if (Interface.addingLink && Interface.addingLink.from) {
+      // draw moving line on AddLink
       e.stopPropagation();
       ctx.putImageData(self.canvasData, 0, 0);
-      // draw moving line on AddLink
       ctx.save();
       ctx.translate(self.translate[0], self.translate[1]);
       ctx.scale(self.scale, self.scale);
@@ -120,10 +162,10 @@ function CanvasEvent(graph) {
       ctx.lineTo(pos.x, pos.y);
       ctx.stroke();
       ctx.restore();
-    } else if (e.which == 1 && !Interface.addingEntity) {
+    } else if (e.which == 1 && !Interface.addingEntity && !self.clicked) {
+      // draw selection rect
       e.stopPropagation();
       ctx.putImageData(self.canvasData, 0, 0);
-      // draw selection rect
       ctx.save();
       ctx.translate(self.translate[0], self.translate[1]);
       ctx.scale(self.scale, self.scale);
@@ -148,6 +190,9 @@ function CanvasEvent(graph) {
         self.selectedEntities.nodes[n].selector.update();
         ctx.restore();
       }
+    } else if (self.clicked) {
+      //prevent dragging on link clicked
+      e.stopPropagation();
     }
 
   }, true);
@@ -157,7 +202,6 @@ function CanvasEvent(graph) {
     if (self.verbose) log('Up');
     var ctx = self.ctx;
     var pos = self.screenToCanvas(e);
-    var target = self.getObjectAt(pos);
     if (event.which == 3) {
       if (self.clicked) {
         if (self.clicked.type == 0) {
@@ -171,8 +215,29 @@ function CanvasEvent(graph) {
       }
       return;
     }
-    // Handling moving nodes action if handling
-    if (self.dragging) {
+
+    if (Interface.addingCorner) {
+      Interface.addingCorner = false;
+      self.hitCorner = false;
+      $("#addCorner").attr('checked', false);
+      $("#addCorner").button('refresh');
+      return;
+    } //stop moving corner
+    else if (self.hitCorner) {
+      self.hitCorner = false;
+      // self.clickedCorner = {link: Link, path: mainPath, point: p, initPathData: pathData}
+      var newPathData = Object.assign({}, self.clickedCorner.path.node().getPathData());
+      var newPath = newPathData.path();
+      self.clickedCorner.path.attr("d", self.clickedCorner.initPathData);
+      self.graph.ctrl.addAction(Action.moveCorner, {
+        d: newPath,
+        path: self.clickedCorner.path
+      });
+      self.graph.ctrl.run();
+      return;
+    }
+    // Handling moving nodes action if dragging
+    else if (self.isDragging) {
       if (pos.x != self.startPos.x || pos.y != self.startPos.y) {
         var actions = [];
         for (var id in self.selectedEntities.nodes) {
@@ -195,10 +260,12 @@ function CanvasEvent(graph) {
         self.clearSelection();
         self.draw();
       }
-      self.dragging = false;
+      self.isDragging = false;
+      return;
     }
+    var target = self.getObjectAt(pos);
     // handle add Link
-    else if (target && !self.isSelecting) {
+    if (target && !self.isSelecting) {
       if (Interface.addingLink && target.type == 0 && target != self.clicked) {
         self.graph.createRelation(Interface.addingLink.type, [Interface.addingLink.from, target], {
           color: Interface.addingLink.color
@@ -295,7 +362,7 @@ CanvasEvent.prototype.draw = function() {
       var rel = group[g];
       draw = true;
       if (this.clicked) {
-        if (this.clicked.id == rel.id) {
+        if (r == this.clicked.hash()) {
           draw = false;
           this.visibleEntities.relations.push(rel);
           continue;
@@ -362,8 +429,12 @@ CanvasEvent.prototype.drawSelection = function() {
     }
   }
   if (this.clicked) {
-    if (this.clicked.type != 0) {
-      this.clicked.redraw();
+    if (this.clicked.type == 1) {
+      var links = this.graph.relations[this.clicked.hash()];
+      for (var id in links) {
+        links[id].redraw();
+      }
+      // this.clicked.redraw();
       this.clicked.selector.update();
     }
   }
@@ -386,6 +457,8 @@ CanvasEvent.prototype.clearSelection = function() {
 
 //Find entity (a link or a node) based on position
 CanvasEvent.prototype.getObjectAt = function(pos) {
+  this.hitCorner = false;
+  this.clickedCorner = null;
   var nodes = this.visibleEntities.nodes;
   for (var id in nodes) {
     var node = nodes[id];
@@ -397,7 +470,6 @@ CanvasEvent.prototype.getObjectAt = function(pos) {
   for (var r in relations) {
     var rel = relations[r];
     if (rel.type == 1) { // this is a link
-      var path = rel.svg.select('.mainPath').node();
       var pathSource = rel.svg.select('.e' + rel.source.id).node();
       var pathTarget = rel.svg.select('.e' + rel.target.id).node();
       var bestSource = closestPoint(pathSource, pos);
@@ -406,7 +478,41 @@ CanvasEvent.prototype.getObjectAt = function(pos) {
       if (dist <= 5) {
         dist = 5;
       }
-      if (bestSource.distance <= dist || bestTarget.distance <= dist) {
+      var onPath = null;
+      if (bestSource.distance <= dist) {
+        onPath = pathSource;
+      } else if (bestTarget.distance <= dist) {
+        onPath = pathTarget;
+      }
+      if (onPath) {
+        var mainPath = rel.getMainPath();
+        if (!mainPath.node()) {
+          mainPath = rel.getRootMainPath();
+        }
+        var points = onPath.getPathData();
+        // if length is not bigger than 4, there is no corner !
+        if (points.length <= 4) {
+          return rel;
+        }
+        for (var p = 0; p < points.length; p++) {
+          var point = points[p];
+          var d = Math.sqrt(Math.pow(point.x - pos.x, 2) + Math.pow(point.y - pos.y, 2));
+          // area of 5 px around point
+          if (d <= 5) {
+            // no corner clicked on first and last ctrlPoint
+            if (p > 1 && p < points.length - 2) {
+              if (this.verbose) log('hitCorner');
+              this.hitCorner = true;
+              var initPath = mainPath.attr('d');
+              this.clickedCorner = {
+                link: rel,
+                path: mainPath,
+                point: p,
+                initPathData: initPath
+              };
+            }
+          }
+        }
         return rel;
       }
     }
@@ -590,10 +696,12 @@ CanvasEvent.prototype.framePopup = function(event) {
 CanvasEvent.prototype.nodePopup = function(event) {
   var self = this;
   var div = Interface.get().popupDiv;
+  var popupWidth = 230;
+  var popupHeight = 100;
   $(div)
-    .css("left", event.pageX - 115)
-    .css("top", event.pageY)
-    .css("width", "230px")
+    .css("left", event.pageX - popupWidth / 2)
+    .css("top", event.pageY - popupHeight)
+    .css("width", popupWidth + "px")
     .css("border", "1px solid #CCCCCC")
     .html("")
     .bind('contextmenu', function(event) {
@@ -756,10 +864,12 @@ CanvasEvent.prototype.nodePopup = function(event) {
 CanvasEvent.prototype.linkPopup = function(event) {
   var self = this;
   var div = Interface.get().popupDiv;
+  var popupWidth = 230;
+  var popupHeight = 80;
   $(div)
-    .css("left", event.pageX - 115)
-    .css("top", event.pageY)
-    .css("width", "230px")
+    .css("left", event.pageX - popupWidth / 2)
+    .css("top", event.pageY - popupHeight)
+    .css("width", popupWidth + "px")
     .css("border", "1px solid #CCCCCC")
     .html("")
     .bind('contextmenu', function(event) {

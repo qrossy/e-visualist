@@ -104,7 +104,7 @@ Action.createCorner = function CreateCorner(params, undo) {
   } else {
     path = links[0].svg.select(".e" + params.id);
   }
-  var segments = path.node().svg.select(".mainPath").node().getPathData();
+  var segments = path.node().getPathData(); //.node().svg.select(".mainPath")
   if (!undo) {
     var prev = segments.getItem(params.index - 1);
     var next = segments.getItem(params.index);

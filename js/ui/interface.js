@@ -212,7 +212,7 @@ Interface.prototype.init = function() {
   Interface.timeBarBandInfos[1].highlight = true;
   Interface.timebar = Timeline.create(document.getElementById("visualist_timebar"), Interface.timeBarBandInfos);
 
-  this.popupDiv = $('<div class="visualist_popup" id="visualist_popup"></div>').draggable();
+  this.popupDiv = $('<div class="visualist_popup" id="visualist_popup" style="display:none;"></div>').draggable();
   $('body').append(this.popupDiv);
 
   //Setup Toolbar
@@ -229,8 +229,7 @@ Interface.prototype.init = function() {
       $('#graph_' + g.id).data('data', g);
       Interface.get().currentGraph = g;
       g.init();
-      g.svg.attr('width', $('.ui-layout-center').width());
-      g.svg.attr('height', $('.ui-layout-center').height());
+      Interface.get().onWindowSizeChanged();
       // Interface.get().updateHistory(true, g);
     }));
   //Open Graph

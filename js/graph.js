@@ -57,7 +57,7 @@ Graph.prototype.init = function() {
       .attr("transform", "translate(0) scale(1)");
     this.context = this.canvas.node().getContext("2d");
     this.canvas.eventHandler = new CanvasEvent(this);
-
+    this.canvas.eventHandler.setViewport();
   } else if (this.isSVG) {
     this.svg = d3.select("#graph_" + this.id)
       .append("svg:svg")
@@ -140,6 +140,8 @@ Graph.prototype.init = function() {
       .attr("ry", 5)
       .attr("stroke", '#000000');
     this.svg.eventHandler = new graphEvent(this);
+    this.svg.attr('width', $('.ui-layout-center').width());
+    this.svg.attr('height', $('.ui-layout-center').height());
   }
 
 };

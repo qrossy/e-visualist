@@ -110,7 +110,7 @@
 		    var e1 = i+1;
 		    var e2 = Math.floor(Math.random()*n)+1;
 		    var e3 = Math.floor(Math.random()*n)+1;
-				var type = Math.floor(Math.random()*3);
+				var type = Math.floor(Math.random()*1);
 		    if (e1 != e2){
 		      actions.push([Action.createRelation, {type:linkType[type], linked:[e1, e2], prop:{}, g:g}]);
 		    }
@@ -123,6 +123,7 @@
 		  Interface.get().updateHistory();
 		  //Send size to SVG:
 		  Interface.get().onWindowSizeChanged();
+			$('a[title=\'ForceLayout\']').click();
 		};
 
 		</SCRIPT>"
