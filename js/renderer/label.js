@@ -153,21 +153,21 @@ Label.prototype.textPopup = function(event)
 	this.oldLabel = this.getHtml();
 	var div = Interface.get().popupDiv;
 	$(div)
-	.css("left", event.pageX - 200)
-	.css("top", (event.pageY - 200) > 0 ? (event.pageY - 200) : 0)
+	.css("left", event.pageX )
+	.css("top", (event.pageY) > 0 ? (event.pageY) : 0)
 	.css("padding", "0px 0px 0px 0px")
 	.css("border", "0px")
 	.css("z-index", 3000)
 	.css("position", "relative")
-	.css("width", 500)
+	.css("width", 650)
 	.html("");
 
-	$(div).append('<div id="visualist_popup_pos" style="position:absolute;left:-70px;border:1px solid #AAA;border-right-width: 0px;">');
+	$(div).append('<div id="visualist_popup_pos" style="position:absolute;left:-70px;border: 2px solid #eee;border-right-width: 0px;border-radius: 10px;">');
 	var self = this;
 	var svg = d3.select("#visualist_popup_pos")
 	.append("svg:svg")
 	.attr("width", 70)
-	.attr("height", 195);
+	.attr("height", 200);
 	if (this.e.type == 0)
 	{
 		svg.append("svg:text")
@@ -268,6 +268,7 @@ Label.prototype.textPopup = function(event)
 
 	var onChangeContent = function()
 	{
+		tinyMCE.baseURL = "api/tinymce";
 		var txt = tinyMCE.activeEditor.getContent();
 		if (txt == ''){
 			var empty = '<p style="text-align: center; margin: 0px;"><span style="text-align: center;"'+
@@ -294,41 +295,15 @@ Label.prototype.textPopup = function(event)
 
 	$('textarea.tinymce').tinymce({
 		// Location of TinyMCE script
-		script_url : 'js/api/tiny_mce/tinymce.min.js',
+		script_url : 'api/tinymce/tinymce.min.js',
 
 		// General options
 		selector: "textarea",
-		// plugins: [
-		// 	"advlist autolink autosave link image lists charmap print preview hr anchor pagebreak spellchecker",
-		// 	"searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking",
-		// 	"table contextmenu directionality emoticons template textcolor paste fullpage textcolor"
-		// ],
-
-		plugins: [
-			"advlist autolink autosave link image lists charmap hr anchor pagebreak",
-			"searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking",
-			"table contextmenu directionality textcolor paste fullpage textcolor"
-		],
-
-		toolbar1: "bold italic underline strikethrough subscript superscript | forecolor backcolor fontselect fontsizeselect",
-		toolbar2: "alignleft aligncenter alignright alignjustify | cut copy paste | bullist numlist | inserttime link unlink code | undo redo removeformat",
+		height: "207",
+		toolbar1: "fontfamily fontsize forecolor backcolor | bold italic underline strikethrough subscript superscript",
+		toolbar2: "alignleft aligncenter alignright alignjustify | cut copy paste | undo redo removeformat",
 		menubar: false,
 		toolbar_items_size: 'small',
-
-		style_formats: [
-			{title: 'Bold text', inline: 'b'},
-			{title: 'Red text', inline: 'span', styles: {color: '#ff0000'}},
-			{title: 'Red header', block: 'h1', styles: {color: '#ff0000'}},
-			{title: 'Example 1', inline: 'span', classes: 'example1'},
-			{title: 'Example 2', inline: 'span', classes: 'example2'},
-			{title: 'Table styles'},
-			{title: 'Table row 1', selector: 'tr', classes: 'tablerow1'}
-		],
-
-		templates: [
-			{title: 'Test template 1', content: 'Test 1'},
-			{title: 'Test template 2', content: 'Test 2'}
-		],
 		onchange_callback : onChangeContent,
 		setup : function(ed) {
 			ed.on('change', onChangeContent);

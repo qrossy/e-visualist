@@ -1,21 +1,23 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<!-- php -S 0.0.0.0:8000 -->
 		<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
 		<title>Visualist | HTML Test</title>
 
 		<script type="text/javascript" src="api/timeline_js/timeline-api.js?bundle=true"></script>
 		<script>SimileAjax.History.enabled = false;</script>
-    <script type="text/javascript" src="api/d3.V3.min.js"></script>
+
+    	<script type="text/javascript" src="api/d3.V3.min.js"></script>
 		<script type="text/javascript" src="api/path-data-polyfill.js"></script>
 
-		<script type="text/javascript" src="api/jquery/jquery-1.10.2.min.js"></script>
-		<script type="text/javascript" src="api/jquery/jquery-ui-1.10.3.custom.min.js"></script>
-		<script type="text/javascript" src="api/jquery/jquery.layout-latest.min.js"></script>
-		<script type="text/javascript" src="api/jquery/jquery-ui.selectmenu.js"></script>
-		<!-- <script type="text/javascript" src="api/jquery/jquery.alerts.js"></script> -->
-		<script type="text/javascript" src="api/jquery/jquery-custom-file-input.js"></script>
-		<script type="text/javascript" src="api/tiny_mce/jquery.tinymce.min.js"></script>
+		<script type="text/javascript" src="api/jquery/jquery-3.6.2.min.js"></script>
+		<script type="text/javascript" src="api/jquery/jquery-ui.min.js"></script>
+		<script type="text/javascript" src="api/jquery/jquery.layout-latest.js"></script>
+		<script type="text/javascript" src="api/jquery/jquery.fonticonpicker.min.js"></script>
+		
+		<script type="text/javascript" src="api/tinymce/tinymce.min.js"></script>
+		<script type="text/javascript" src="api/tinymce/jquery.tinymce.min.js"></script>
 
 		<script type="text/javascript" src="js/utils.js"></script>
 		<script type="text/javascript" src="js/actions.js"></script>
@@ -40,9 +42,11 @@
 		<script type="text/javascript" src="js/renderer/polygon.js"></script>
 		<script type="text/javascript" src="js/renderer/selector.js"></script>
 
-		<link type="text/css" rel="stylesheet" href="css/smoothness/visualist.css" /> <!--black-tie-->
+		<link type="text/css" rel="stylesheet" href="css/jquery-ui.min.css" />
+		<link type="text/css" rel="stylesheet" href="css/jquery-ui.structure.min.css" />
+		<link type="text/css" rel="stylesheet" href="css/jquery-ui.theme.min.css" />
+		<link type="text/css" rel="stylesheet" href="css/tinymce.css" />
 		<link type="text/css" rel="stylesheet" href="css/app.css" />
-		<link type="text/css" rel="stylesheet" href="css/jquery.alerts.css" media="screen" />
 
 		<?php
 
@@ -99,25 +103,6 @@
 
 			$('#graph_'+g.id).data('data', g);
 			g.init();
-			var actions = new Array();
-			var n = 10;
-			for (var i = 0; i < n; i++){
-				actions.push([Action.createNode, {e:{x:Math.random()*500,y:Math.random()*300,shape:2}, g:g}]);
-			}
-			// Math.floor(Math.random()*3)
-			var linkType = {0:'link', 1:'polygon',2:'box'};
-			for (var i = 0; i < n; i++){
-				var e1 = Math.floor(Math.random()*n)+1;
-				var e2 = Math.floor(Math.random()*n)+1;
-				if (e1 != e2){
-					actions.push([Action.createRelation, {type:linkType[0], linked:[e1, e2], prop:{}, g:g}]);
-				}
-			}
-			g.ctrl.addBatch(actions, 'RandomGraph');
-			g.ctrl.run();
-
-			Interface.get().updateHistory();
-			//Send size to SVG:
 			Interface.get().onWindowSizeChanged();
 		});
 

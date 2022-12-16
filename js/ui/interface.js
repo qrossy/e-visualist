@@ -5,8 +5,6 @@
 * @constructor call by the method get()
 */
 
-//https://github.com/dhotson/springy
-
 Interface.instance = null;
 
 Interface.get = function() {
@@ -100,7 +98,7 @@ function Interface()
 
 Interface.prototype.setKeyEvents = function()
 {
-	$(document).keydown(function(event) {
+	$(document).on("keydown", function(event) {
 		if(event.keyCode == 18){ // click Alt to add link !
 			if (!Interface.addingLink){
 				Interface.addingLink = {};
@@ -109,8 +107,18 @@ Interface.prototype.setKeyEvents = function()
 			}
 		}
 	});
-	$(document).keyup(function(event) {
-		if(event.keyCode == 8 || event.keyCode == 46){
+	
+	$(window).on("keyup", function(event) {
+		if(event.keyCode == 18){
+			// event.preventDefault();
+			// event.stopPropagation();
+			Interface.addingLink = false;
+		}
+	});
+
+	$(document).on("keyup", function(event) {
+		//log(event.target.tagName);
+		if((event.keyCode == 8 || event.keyCode == 46) && event.target.tagName == 'BODY'){
 			var g = Interface.get().currentGraph;
 			if (Interface.selectedCorner){
 				var info = Interface.selectedCorner.attr('class').split('_');
@@ -133,14 +141,6 @@ Interface.prototype.setKeyEvents = function()
 						g.ctrl.run();
 					}
 				}
-			}
-		});
-
-		$(window).keyup(function(event) {
-			if(event.keyCode == 18){
-				// event.preventDefault();
-				// event.stopPropagation();
-				Interface.addingLink = false;
 			}
 		});
 	};
@@ -200,9 +200,9 @@ Interface.prototype.setKeyEvents = function()
 		var toolbar = $('.ui-layout-north');
 		//New Graph
 		toolbar.append($('<a class="toolbar_tool ui-widget" title="New Graph"><span class="ui-icon ui-icon-document inline_icon"></span>&nbsp;&nbsp;&nbsp;</a>')
-		.button().click(function(e) {
+		.button().on("click", function(e) {
 			e.preventDefault();
-			$(this).blur();
+			$(this).trigger('blur');
 			var g = new Graph();
 			$( '<li><a href=#graph_'+g.id+'>NewGraph::'+g.id+'</a></li>' ).appendTo( '.center-tabs .ui-tabs-nav' );
 			$( '.center-tabs' ).tabs( 'refresh' );
@@ -217,8 +217,9 @@ Interface.prototype.setKeyEvents = function()
 		//Open Graph
 		toolbar.append($('<div style="float:left;"><form id="visualistOpen" name="viualistOpen" enctype="multipart/form-data" method="post" action="load.php" target="upload_target" ></div>'));
 		toolbar.append($('<iframe id="upload_target" name="upload_target" src="#" style="width:0;height:0;border:0px solid #fff;"></iframe> '));//style="visibility:hidden"
-		toolbar.append($('<a class="visualistLoad toolbar_tool ui-widget" title="Open Graph"><span class="ui-icon ui-icon-folder-open inline_icon"></span>&nbsp;&nbsp;&nbsp;</a>').button().file());
-		$('.visualistLoad').choose(function(e, input) {
+		toolbar.append($('<a class="visualistLoad toolbar_tool ui-widget" title="Open Graph"><span class="ui-icon ui-icon-folder-open inline_icon"></span>&nbsp;&nbsp;&nbsp;</a>').button().trigger('file')); //.file()
+		
+		$('.visualistLoad').on("choose", function(e, input) {
 			input.attr("name", "File");
 			input.css("visibility", "hidden");
 			$('#visualistOpen').append(input);
@@ -231,9 +232,9 @@ Interface.prototype.setKeyEvents = function()
 		.append('<input type="text" id="graphName" name="Graph" style="visibility:hidden"/>');
 		toolbar.append(form);
 		toolbar.append($('<a class="toolbar_tool ui-widget" title="Save Graph" href="javascript:void(0);"><span class="ui-icon ui-icon-disk inline_icon"></span>&nbsp;&nbsp;&nbsp;</a>')
-		.button().click(function(e) {
+		.button().on("click", function(e) {
 			e.preventDefault();
-			$(this).blur();
+			$(this).trigger('blur');
 			var g = Interface.get().currentGraph;
 			$('#saveString').val(JSON.stringify(g.getData()));
 			$('#graphName').val(g.name);
@@ -243,7 +244,7 @@ Interface.prototype.setKeyEvents = function()
 
 		//Layout
 		toolbar.append($('<span class="toolbar_tool ui-widget"><a title="ForceLayout">forceLayout</a></span>')
-		.button().click(function(e) {
+		.button().on("click", function(e) {
 			e.preventDefault();
 			var g = Interface.get().currentGraph;
 			g.hideHelpers();
@@ -266,13 +267,41 @@ Interface.prototype.setKeyEvents = function()
 			force.start();
 		}));
 
+		//RandomGraph
+		toolbar.append($('<span class="toolbar_tool ui-widget"><a title="RandomGraph">RandomGraph</a></span>')
+		.button().on("click", function(e) {
+			e.preventDefault();
+			var graph = Interface.get().currentGraph;
+			graph.hideHelpers();
+			var size = Interface.get().canvasSize();
+			var actions = new Array();
+			var n = 10;
+			for (var i = 0; i < n; i++){
+				actions.push([Action.createNode, {e:{id:i, x:Math.random()*size[0],y:Math.random()*size[1],shape:2}, g:graph}]);
+			}
+			// Math.floor(Math.random()*3)
+			var linkType = {0:'link', 1:'polygon',2:'box'};
+			for (var i = 0; i < n*1.5; i++){
+				var e1 = Math.floor(Math.random()*n)+1;
+				var e2 = Math.floor(Math.random()*n)+1;
+				if (e1 != e2){
+					actions.push([Action.createRelation, {type:linkType[0], linked:[e1, e2], prop:{}, g:graph}]);
+				}
+			}
+			graph.ctrl.addBatch(actions, 'RandomGraph');
+			graph.ctrl.run();
+			Interface.get().updateHistory();
+			//Send size to SVG:
+			Interface.get().onWindowSizeChanged();
+		}));
+
 		toolbar.append('<span class="toolbar_tool ui-widget"><input type="checkbox" id="showTimebar" /><label for="showTimebar">Timebar</label></span>');
-		$("#showTimebar").click(function() {
+		$("#showTimebar").on("click", function() {
 			$("#visualist_timebar").is(':visible') ? $("#visualist_timebar").hide() : $("#visualist_timebar").show();
 			Interface.get().onWindowSizeChanged();
 		});
 		$("#visualist_timebar").hide();
-		$("#showTimebar").attr('checked', false);
+		$("#showTimebar").checked = false;
 		$("#showTimebar").button();
 
 		// LEFT PANEL
@@ -286,18 +315,18 @@ Interface.prototype.setKeyEvents = function()
 		var history = $('<div style="min-height: 200px;"><table class="visualist-history" style="display:block;"></table></div>');
 
 		var undo = $('<a class="toolbar_tool" href="#undo"><span class="ui-icon ui-icon-arrowreturnthick-1-w inline_icon"></span>&nbsp;&nbsp;</a>')
-		.button().click(function(e) {
+		.button().on("click", function(e) {
 			e.preventDefault();
-			$(this).blur();
+			$(this).trigger('blur');
 			var g = Interface.get().currentGraph;
 			g.undo();
 			Interface.get().updateHistory();
 		});
 
 		var redo = $('<a class="toolbar_tool" href="#redo"><span class="ui-icon ui-icon-arrowreturnthick-1-e inline_icon"></span>&nbsp;&nbsp;</a>')
-		.button().click(function(e) {
+		.button().on("click", function(e) {
 			e.preventDefault();
-			$(this).blur();
+			$(this).trigger('blur');
 			var g = Interface.get().currentGraph;
 			g.redo();
 			Interface.get().updateHistory();
@@ -357,7 +386,7 @@ Interface.prototype.setKeyEvents = function()
 		var entity = event.e;
 		if (!entity){
 			div.append('<input type="checkbox" id="gridVisible" /><label for="gridVisible">Show grid</label>');
-			$("#gridVisible").click(function() {
+			$("#gridVisible").on("click", function() {
 				if(g.gridVisible){
 					g.gridVisible = false;
 					g.svg.select(".grid").attr('visibility', 'hidden');
@@ -367,14 +396,14 @@ Interface.prototype.setKeyEvents = function()
 					g.svg.select(".grid").attr('visibility', 'visible');
 				}
 			});
-			if (g.gridVisible) $("#gridVisible").attr('checked', true);
+			if (g.gridVisible) $("#gridVisible").checked = true;
 			// $("#gridVisible").button();
 			div.append('<br/>');
 			div.append('<input type="checkbox" id="snapToGrid" /><label for="snapToGrid">Snap to grid</label>');
-			$("#snapToGrid").click(function(e) {
+			$("#snapToGrid").on("click", function(e) {
 				g.snapToGrid ? g.snapToGrid = false : g.snapToGrid = true;
 			});
-			if (g.snapToGrid) $("#snapToGrid").attr('checked', true);
+			if (g.snapToGrid) $("#snapToGrid").checked = true;
 			// $("#snapToGrid").button();
 			div.append('<br/>');
 			var gridSliderDiv = $('<div style="margin-left:5px;margin-top:5px;">');
@@ -401,16 +430,16 @@ Interface.prototype.setKeyEvents = function()
 			eType.append('<input type="radio" id="visualist_node_type3" name="radio" value="2"/><label for="visualist_node_type3">Circle</label>');
 			div.append(eType);
 			if (entity.shape == 0){
-				$('#visualist_node_type1').attr("checked",true);
+				$('#visualist_node_type1').checked = true;
 			}
 			else if (entity.shape == 1){
-				$('#visualist_node_type2').attr("checked",true);
+				$('#visualist_node_type2').checked = true;
 			}
 			else if (entity.shape == 2){
-				$('#visualist_node_type3').attr("checked",true);
+				$('#visualist_node_type3').checked = true;
 			}
 			eType.buttonset();
-			eType.find('input').click(function() {
+			eType.find('input').on("click", function() {
 				var val = parseInt($(this).attr('value'));
 				Interface.entityType = val;
 				entity.shape = val;
@@ -422,10 +451,10 @@ Interface.prototype.setKeyEvents = function()
 			eSet.append('<input type="checkbox" id="visualist_node_set" name="radio"/><label for="visualist_node_set">Set</label>');
 			div.append(eSet);
 			if (entity.set){
-				$('#visualist_node_set').attr("checked",true);
+				$('#visualist_node_set').checked = true;
 			}
 			eSet.buttonset();
-			eSet.find('input').click(function() {
+			eSet.find('input').on("click", function() {
 				var val = $(this).attr('checked');
 				val == 'checked' ? entity.set = true : entity.set = false;
 				entity.create();
@@ -437,10 +466,10 @@ Interface.prototype.setKeyEvents = function()
 			eTheme.append('<input type="checkbox" id="visualist_node_theme" name="radio"/><label for="visualist_node_theme">ThemeLine</label>');
 			div.append(eTheme);
 			if (entity.theme.draw){
-				$('#visualist_node_theme').attr("checked",true);
+				$('#visualist_node_theme').checked = true;
 			}
 			eTheme.buttonset();
-			eTheme.find('input').click(function() {
+			eTheme.find('input').on("click", function() {
 				var val = $(this).attr('checked');
 				val == 'checked' ? entity.theme.draw = true : entity.theme.draw = false;
 				entity.create();
@@ -492,7 +521,8 @@ Interface.prototype.setKeyEvents = function()
 	*
 	*/
 	Interface.prototype.onWindowSizeChanged = function()
-	{
+	{	
+		log('Resize Canvas');
 		var g = this.currentGraph;
 		if (g){
 			var size = this.canvasSize();
@@ -516,20 +546,13 @@ Interface.prototype.setKeyEvents = function()
 	*
 	*/
 	Interface.prototype.canvasSize = function()
-	{
-		var w = $(window).width()
-		-$('.ui-layout-east').outerWidth()
-		-$('.ui-layout-west').outerWidth()
-		-$('.ui-layout-resizer-east').outerWidth()
-		-$('.ui-layout-resizer-west').outerWidth()
-		-14; //?
-		var h = $(window).height()
-		-$('.ui-layout-north').outerHeight()
-		-$('.ui-layout-south').outerHeight()
-		-$('.ui-tabs-nav').outerHeight()
-		-$('.ui-layout-resizer-north').outerHeight()
-		-$('.ui-layout-resizer-south').outerHeight()
-		-( $("#visualist_timebar").is(':visible') ? $('.visualist_timebar').outerHeight() : 0);
+	{	
+		var w = $('.ui-layout-center').outerWidth()
+			- 12; //TODO: why ? (border)
+		var h = $('.ui-layout-center').outerHeight()
+			- ($('.ui-tabs-nav').is(':visible') ? $('.ui-tabs-nav').outerHeight() : 0)
+			- ($("#visualist_timebar").is(':visible') ? $('.visualist_timebar').outerHeight() : 0)
+			- 12; //TODO: why ? (border)
 		return [w, h];
 	};
 
@@ -585,7 +608,7 @@ Interface.prototype.setKeyEvents = function()
 			}
 		}
 		gDiv.buttonsetv();
-		gDiv.find('input').click(function() {
+		gDiv.find('input').on("click", function() {
 			var id = $(this).attr('value');
 			if (id == 'all'){
 				$('.visualist_nodeSelector_images').find('div').show('slide', {}, 100);
@@ -596,9 +619,11 @@ Interface.prototype.setKeyEvents = function()
 				});
 			}
 		});
+		gDiv.append('<div ui-widget" style="margin-top: 10px !important;"><select id="e1_element" name="e1_element"><option value="">No icon</option><option>icon-user</option></select></div>');
+		$('#e1_element').fontIconPicker();
 
 		gDiv.append('<div ui-widget" style="margin-top: 10px !important;"><input type="checkbox" id="addText" /><label for="addText">Text</label></div>');
-		$("#addText").click(function() {
+		$("#addText").on("click", function() {
 			//
 		});
 		$("#addText").button();
@@ -607,7 +632,7 @@ Interface.prototype.setKeyEvents = function()
 		rType.append('<input type="radio" id="visualist_linkSelector_type1" name="radio" value="link" /><label for="visualist_linkSelector_type1">Link</label>');
 		rType.append('<input type="radio" id="visualist_linkSelector_type2" name="radio" value="polygon"/><label for="visualist_linkSelector_type2">Polygon</label>');
 		rType.append('<input type="radio" id="visualist_linkSelector_type3" name="radio" value="box"/><label for="visualist_linkSelector_type3">Box</label>');
-		rType.find('input').click(function(e) {
+		rType.find('input').on("click", function(e) {
 			Interface.addingLink = {};
 			Interface.addingLink.type = $(this).attr('value');
 			Interface.addingLink.color = "grey";
@@ -616,10 +641,10 @@ Interface.prototype.setKeyEvents = function()
 		rType.buttonsetv();
 
 		gDiv.append('<div ui-widget" style="margin-top: 10px !important;"><input type="checkbox" id="addCorner" /><label for="addCorner">Corner</label></div>');
-		$("#addCorner").click(function() {
+		$("#addCorner").on("click", function() {
 			Interface.addingCorner = true;
 		});
-		$("#addCorner").attr('checked', false);
+		$("#addCorner").checked = false;
 		$("#addCorner").button();
 	};
 
