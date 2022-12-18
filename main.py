@@ -103,7 +103,7 @@ app.layout = dmc.MantineProvider(
             cyto.Cytoscape(
                 id='graph',
                 elements=[
-                    {'data': {'id': 'one', 'label': 'Node 1'}, 'position': {'x': 40, 'y': 350}, 'classes':'triangle'},
+                    {'data': {'id': 'one', 'label': 'Node 1'}, 'position': {'x': 40, 'y': 350}, 'classes':'icon'},
                     {'data': {'id': 'two', 'label': 'Node 2'}, 'position': {'x': 500, 'y': 400}},
                     {'data': {'source': 'one', 'target': 'two','label': 'Node 1 to 2'}}
                 ],
@@ -130,12 +130,12 @@ app.layout = dmc.MantineProvider(
                         }
                     },
                     {
-                        'selector': '.triangle',
+                        'selector': '.icon',
                         'style': {
-                            'shape': 'triangle',
+                            'shape': 'round-rectangle',
                             'font-family': 'Open Sans',
                             'background-image-containment': 'over',
-                            'background-image': 'person.png'
+                            'background-image': 'https://raw.githubusercontent.com/qrossy/e-visualist/272d2a7b9568fb9b6e30cfe1f75fe78cb293f86d/house-solid.svg'
                         }
                     }
                 ]
