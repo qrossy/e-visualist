@@ -134,7 +134,8 @@ app.layout = dmc.MantineProvider(
                         'style': {
                             'shape': 'round-rectangle',
                             'font-family': 'Open Sans',
-                            'background-image-containment': 'over',
+                            'background-fit': 'contain',
+                            'width': '50px',
                             'background-image': 'https://raw.githubusercontent.com/qrossy/e-visualist/272d2a7b9568fb9b6e30cfe1f75fe78cb293f86d/house-solid.svg'
                         }
                     }
