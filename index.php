@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<!-- php -S 0.0.0.0:8000 -->
+<!-- https://docs.iconify.design/icon-components/bundles/ -->
 <html>
 	<head>
 		<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
@@ -6,17 +8,18 @@
 
 		<script type="text/javascript" src="api/timeline_js/timeline-api.js?bundle=true"></script>
 		<script>SimileAjax.History.enabled = false;</script>
-    <script type="text/javascript" src="api/d3.V3.min.js"></script>
+    	<script type="text/javascript" src="api/d3.V3.min.js"></script>
 		<script type="text/javascript" src="api/path-data-polyfill.js"></script>
+		<script type="text/javascript" src="api/html2canvas.min.js"></script>
 
 		<script type="text/javascript" src="api/jquery/jquery-1.10.2.min.js"></script>
 		<script type="text/javascript" src="api/jquery/jquery-ui-1.10.3.custom.min.js"></script>
 		<script type="text/javascript" src="api/jquery/jquery.layout-latest.min.js"></script>
-		<script type="text/javascript" src="api/jquery/jquery-ui.selectmenu.js"></script>
-		<!-- <script type="text/javascript" src="api/jquery/jquery.alerts.js"></script> -->
 		<script type="text/javascript" src="api/jquery/jquery-custom-file-input.js"></script>
-		<script type="text/javascript" src="api/tiny_mce/jquery.tinymce.min.js"></script>
 
+		<script type="text/javascript" src="api/tinymce/tinymce.min.js"></script>
+		<script type="text/javascript" src="api/tinymce/jquery.tinymce.min.js"></script>
+		
 		<script type="text/javascript" src="js/utils.js"></script>
 		<script type="text/javascript" src="js/actions.js"></script>
 		<script type="text/javascript" src="js/controller.js"></script>
@@ -43,7 +46,7 @@
 
 		<link type="text/css" rel="stylesheet" href="css/smoothness/visualist.css" /> <!--black-tie-->
 		<link type="text/css" rel="stylesheet" href="css/app.css" />
-		<link type="text/css" rel="stylesheet" href="css/jquery.alerts.css" media="screen" />
+		<link type="text/css" rel="stylesheet" href="css/tinymce.css" />
 
 		<?php
 
@@ -101,9 +104,11 @@
 		  g.setRenderer('canvas');
 		  g.init();
 		  var actions = [];
-		  var n = 10;
+		  var n = 5;
 		  for (var i = 0; i < n; i++){
-		    actions.push([Action.createNode, {e:{x:Math.random()*500,y:Math.random()*500,icon:'img/person/male.png',shape:0}, g:g}]);
+			var pos = {x:Math.random()*500, y:Math.random()*500}; 
+			pos = g.snap(pos);
+		    actions.push([Action.createNode, {e:{x:pos.x,y:pos.y,icon:'img/person/male.png',shape:0}, g:g}]);
 		  }
 		  var linkType = {0:'link', 1:'polygon',2:'box'};
 		  for (i = 0; i < n; i++){

@@ -55,7 +55,7 @@ Graph.prototype.init = function() {
       .append("canvas")
       .attr("class", "canvas")
       .attr("transform", "translate(0) scale(1)");
-    this.context = this.canvas.node().getContext("2d");
+    this.context = this.canvas.node().getContext("2d", { willReadFrequently: true });
     this.canvas.eventHandler = new CanvasEvent(this);
     this.canvas.eventHandler.setViewport();
   } else if (this.isSVG) {

@@ -521,7 +521,6 @@ Interface.prototype.onWindowSizeChanged = function() {
   var g = this.currentGraph;
   if (g) {
     var size = this.canvasSize();
-    log(size);
     if (size[0] <= 0 || size[1] <= 0) {
       return;
     }

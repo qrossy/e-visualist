@@ -8,7 +8,7 @@ function CanvasEvent(graph) {
   this.verbose = true;
   this.graph = graph;
   this.canvas = graph.canvas.node();
-  this.ctx = this.canvas.getContext('2d');
+  this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
 
   this.visibleEntities = {
     nodes: [],
@@ -48,8 +48,8 @@ function CanvasEvent(graph) {
     this.styleBorderTop = parseInt(document.defaultView.getComputedStyle(this.canvas, null).borderTopWidth, 10) || 0;
   }
 
-  this.canvas.addEventListener('contextmenu', function(event) {
-    event.preventDefault();
+  this.canvas.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
   });
 
   this.canvas.addEventListener('mousedown', function(e) {
@@ -60,11 +60,10 @@ function CanvasEvent(graph) {
     self.startPos = pos; //first position, will not be updated on move
     self.clicked = self.getObjectAt(pos);
     if (self.clicked) {
+      if (self.verbose) log('Clicked on Object');
       if (Interface.addingLink) {
         if (self.verbose) log('AddLink');
         Interface.addingLink.from = self.clicked;
-        self.clearSelection();
-        self.draw();
       } else if (Interface.addingCorner && self.clicked.type == 1) {
         if (self.verbose) log('AddCorner');
         var id = null;
@@ -92,24 +91,23 @@ function CanvasEvent(graph) {
           id: id
         });
         self.graph.ctrl.run();
-        self.draw();
-        self.drawSelection();
       } else if (self.clicked.type == 0) {
         self.isDragging = true;
         if (self.selectedEntities.nodes.indexOf(self.clicked) == -1) {
-          self.selectedEntities.nodes = [self.clicked];
-          self.draw();
-          self.drawSelection();
-        } else {}
+          self.selectedEntities.nodes = [self.clicked]; //select before redraw
+        } 
       } else if (self.clicked.type == 1) {
-        self.draw();
-        self.drawSelection();
-      }
+      } 
+      self.draw(); // redraw all except selection one time before dragging
+      self.drawSelection();
     } else {
-      self.selectedEntities.nodes = [];
-      self.selectedEntities.frames = self.getFramesAt(pos);
-      self.draw();
-      if (event.which != 3) {
+      if (self.selectedEntities.nodes.length > 0){
+        self.selectedEntities.nodes = []; //unselect before redraw
+        self.draw();
+      }
+      // self.selectedEntities.frames = self.getFramesAt(pos);
+      
+      if (e.which != 3) {
         var div = Interface.get().popupDiv;
         $(div).fadeOut();
       }
@@ -117,11 +115,10 @@ function CanvasEvent(graph) {
     Interface.get().updateProperties(self.clicked);
   }, true);
 
-
   this.canvas.addEventListener('mousemove', function(e) {
     if (self.verbose) log('Move');
     //prevent events if popup is visible (usefull when dragging it)
-    if ($(Interface.get().popupDiv).css('display') === 'block') {
+    if ($(Interface.get().popupDiv).css('display') == 'block') {
       if (self.verbose) log('Prevent dragging');
       return;
     }
@@ -130,6 +127,7 @@ function CanvasEvent(graph) {
     //TODO handling dragging outside of the canvas ... block and panning ?
 
     if (self.hitCorner) {
+      if (self.verbose) log('HitCorner');
       e.stopPropagation();
       if (self.verbose) log('Corner Dragging');
       var pathData = self.clickedCorner.path.node().getPathData();
@@ -143,6 +141,9 @@ function CanvasEvent(graph) {
       if (self.verbose) log('Dragging');
       for (var n in self.selectedEntities.nodes) {
         var node = self.selectedEntities.nodes[n];
+        //if (self.graph.snapToGrid){
+        //  pos = self.graph.snap(pos);
+        //}
         node.x -= self.initPos.x - pos.x;
         node.y -= self.initPos.y - pos.y;
       }
@@ -150,6 +151,7 @@ function CanvasEvent(graph) {
       //we redraw only the clicked node (the rest is stored in a image during draw)
       self.drawSelection();
     } else if (Interface.addingLink && Interface.addingLink.from) {
+      if (self.verbose) log('AddLink');
       // draw moving line on AddLink
       e.stopPropagation();
       ctx.putImageData(self.canvasData, 0, 0);
@@ -163,6 +165,7 @@ function CanvasEvent(graph) {
       ctx.stroke();
       ctx.restore();
     } else if (e.which == 1 && !Interface.addingEntity && !self.clicked) {
+      if (self.verbose) log('Select');
       // draw selection rect
       e.stopPropagation();
       ctx.putImageData(self.canvasData, 0, 0);
@@ -197,18 +200,18 @@ function CanvasEvent(graph) {
 
   }, true);
 
-
   this.canvas.addEventListener('mouseup', function(e) {
     if (self.verbose) log('Up');
     var ctx = self.ctx;
     var pos = self.screenToCanvas(e);
-    if (event.which == 3) {
+    if (e.which == 3) {
       if (self.clicked) {
         if (self.clicked.type == 0) {
           self.nodePopup(e);
-        }
-        if (self.clicked.type == 1) {
+        } else if (self.clicked.type == 1) {
           self.linkPopup(e);
+        } else if (self.clicked instanceof Label){
+          self.labelPopup(e);
         }
       } else if (self.selectedEntities.frames.length > 0) {
         self.framePopup(e);
@@ -362,10 +365,12 @@ CanvasEvent.prototype.draw = function() {
       var rel = group[g];
       draw = true;
       if (this.clicked) {
-        if (r == this.clicked.hash()) {
-          draw = false;
-          this.visibleEntities.relations.push(rel);
-          continue;
+        if (this.clicked instanceof Node){
+          if (r == this.clicked.hash()) {
+            draw = false;
+            this.visibleEntities.relations.push(rel);
+            continue;
+          }
         }
       }
       if (this.selectedEntities.nodes.length > 0) {
@@ -392,7 +397,7 @@ CanvasEvent.prototype.draw = function() {
   for (var n in nodes) {
     var node = nodes[n];
     draw = true;
-    //clicked node are drawn at the end !
+    //clicked node are drawn at the end !prot
     if (this.selectedEntities.nodes.indexOf(node) != -1) {
       this.visibleEntities.nodes.push(node);
       draw = false;
@@ -464,25 +469,39 @@ CanvasEvent.prototype.getObjectAt = function(pos) {
     var node = nodes[id];
     if (node.contains(pos.x, pos.y)) {
       return node;
+    } else {
+      var label = node.hitLabel(pos.x, pos.y);
+      if (label != null){
+        if (this.verbose) log('HitLabel');
+        return label;
+      }
     }
   }
   var relations = this.visibleEntities.relations;
   for (var r in relations) {
     var rel = relations[r];
+    
     if (rel.type == 1) { // this is a link
-      var pathSource = rel.svg.select('.e' + rel.source.id).node();
-      var pathTarget = rel.svg.select('.e' + rel.target.id).node();
-      var bestSource = closestPoint(pathSource, pos);
-      var bestTarget = closestPoint(pathTarget, pos);
       var dist = rel.width;
       if (dist <= 5) {
         dist = 5;
       }
+      var pathSource = rel.svg.select('.e' + rel.source.id).node();
+      var pathTarget = rel.svg.select('.e' + rel.target.id).node();
+      if (pathSource.getPathData().length != 0){
+        var path = pathSource;
+        var best = closestPoint(pathSource, pos);
+      }
+      if (pathTarget.getPathData().length != 0){
+        var targetDist = closestPoint(pathTarget, pos);
+        if (targetDist.distance < best.distance){
+          path = pathTarget;
+          best = targetDist;
+        }
+      }
       var onPath = null;
-      if (bestSource.distance <= dist) {
-        onPath = pathSource;
-      } else if (bestTarget.distance <= dist) {
-        onPath = pathTarget;
+      if (best.distance <= dist) {
+        onPath = path;
       }
       if (onPath) {
         var mainPath = rel.getMainPath();
@@ -860,6 +879,184 @@ CanvasEvent.prototype.nodePopup = function(event) {
   $(div).show();
 };
 
+CanvasEvent.prototype.labelPopup = function(event) {
+	var div = Interface.get().popupDiv;
+  
+	$(div)
+	.css("left", event.pageX )
+	.css("top", (event.pageY) > 0 ? (event.pageY) : 0)
+	.css("padding", "0px 0px 0px 0px")
+	.css("border", "0px")
+	.css("z-index", 3000)
+	.css("position", "relative")
+	.css("width", 650)
+  .bind('contextmenu', function(event) {
+      event.preventDefault();
+    })
+	.html("");
+
+	$(div).append('<div id="visualist_popup_pos" style="position:absolute;left:-70px;border: 2px solid #eee;border-right-width: 0px;border-radius: 10px;">');
+	var self = this;
+	var svg = d3.select("#visualist_popup_pos")
+	.append("svg:svg")
+	.attr("width", 70)
+	.attr("height", 200);
+	if (this.clicked.e.type == 0)
+	{
+		svg.append("svg:text")
+		.attr("x", 15)
+		.attr("y", 10)
+		.text("Position");
+		var size = 15;
+		var margin = 3;
+		for (var i = 1; i < 10; i++){
+			var x = i%3;
+			x == 0 ? x = 3 : x = x;
+			var y = Math.floor(i/3);
+			i%3 != 0 ? y += 1: y = y;
+			svg.append("svg:rect")
+			.attr("id", i)
+			.attr("fill", "black")
+			.attr("fill-opacity", this.pos == i ? 0.9 : 0)
+			.attr("stroke", "black")
+			.attr("stroke-width", this.pos == i ? 0 : 0.5)
+			.attr("stroke-dasharray", '1,1')
+			.attr("x", -10 + (size+margin)*x)
+			.attr("y", (size+margin)*y)
+			.attr("width", size)
+			.attr("height", size)
+			.on('mousedown', function(d){
+				svg.selectAll('rect').each(function() {$(this).attr("fill-opacity", 0).attr("stroke-width", 0.5);});
+				$(this).attr("fill-opacity", 0.7).attr("stroke-width", 0);
+				self.clicked.pos = $(this).attr("id");
+        self.clicked.redraw();
+        self.draw();
+			  self.drawSelection();
+				Interface.modifiedLabel = self.clicked;
+			});
+		}
+	}
+	else if (this.clicked.e.type == 1)
+	{
+	}
+	svg.append("svg:text")
+	.attr("x", 10)
+	.attr("y", 85)
+	.text("Text Width");
+	var widthSvg = svg.append("svg:foreignObject")
+	.attr("x", 25)
+	.attr("y", 90)
+	.attr("width", 50)
+	.attr("height", 80);
+	var wDiv = $('<div class="visualist_textwidthSelector">');
+	wDiv.append('<div class="vslider" id="slider-vertical" style="height:50px;margin-left: 6px;"></div>');
+	wDiv.append('<input type="text" id="label-width" style="width:40px;"/>');
+	$(widthSvg.node()).append(wDiv);
+	$("#slider-vertical").slider({
+		orientation: "vertical",
+		range: "min",
+		min: 10,
+		max: 300,
+		value: self.clicked.textWidth,
+		slide: function( event, ui ) {
+			$( "#label-width" ).val( ui.value );
+			self.clicked.textWidth = ui.value;
+			if (self.clicked.e.type == 0){
+				self.clicked.x = self.clicked.e.w/2 - self.clicked.textWidth/2;
+			}
+			else{
+				self.clicked.x = self.clicked.e.x - self.clicked.textWidth/2;
+			}
+			self.clicked.redraw();
+      self.draw();
+			self.drawSelection();
+			Interface.modifiedLabel = self.clicked;
+		}
+	});
+	$( "#label-width" ).val( $( "#slider-vertical" ).slider( "value" ));
+
+	svg.append("svg:text")
+	.attr("x", 10)
+	.attr("y", 170)
+	.text("Fixed");
+	svg.append("svg:rect")
+	.attr("id", "fixedWidth")
+	.attr("fill", "black")
+	.attr("fill-opacity", this.clicked.fixedWidth ? 0.7 : 0)
+	.attr("stroke", "black")
+	.attr("stroke-width", this.clicked.fixedWidth ? 0 : 0.5)
+	.attr("stroke-dasharray", '1,1')
+	.attr("x", 45)
+	.attr("y", 162)
+	.attr("width", 10)
+	.attr("height", 10)
+	.on('mousedown', function(d){
+		self.clicked.fixedWidth ? $(this).attr("fill-opacity", 0).attr("stroke-width", 0.5) : $(this).attr("fill-opacity", 0.7).attr("stroke-width", 0);
+		self.clicked.fixedWidth = self.clicked.fixedWidth ? false : true;
+		self.clicked.redraw();
+    self.draw();
+		self.drawSelection();
+		Interface.modifiedLabel = self.clicked;
+	});
+
+	var txt = this.clicked.text;
+	div.append('<textarea class="tinymce" name="content">'+txt+'</textarea>');
+
+	var onChangeContent = function()
+	{
+		tinyMCE.baseURL = "api/tinymce";
+		var txt = tinyMCE.activeEditor.getContent();
+		if (txt == ''){
+			var empty = '<p style="text-align: center; margin: 0px;"><span style="text-align: center;"'+
+			(self.e.type == 1 ? 'style="background-color:#ffffff;"' : '')+'><br /></span></p>';
+			tinyMCE.activeEditor.setContent(empty);
+			txt = empty;
+		}
+		if (!self.clicked.fixedWidth){
+			var max = 0;
+			$(tinyMCE.activeEditor.getBody()).find('span').each(function(){
+				var w = $(this).width();
+				w > max ? max = w : false;
+			});
+			self.clicked.textWidth = parseInt(max*1.2);
+			$( "#label-width" ).val(self.clicked.textWidth);
+			$( "#slider-vertical" ).slider( "value", self.clicked.textWidth);
+		}
+		self.clicked.html = txt;
+    // var canvas = self.clicked.e.g.canvas.node();
+    // var content = $("#tinymce");
+    // log(content);
+    // html2canvas(content, {'canvas': canvas}).then(function(canvas) {
+    //   console.log('Drew on the existing canvas');
+    // });
+		// $(self.svg.select('div').node()).find('p').css('margin', '0px');
+    self.clicked.text = txt;
+		self.clicked.redraw();
+    self.draw();
+		self.drawSelection();
+		Interface.modifiedLabel = self.clicked;
+	}
+
+	$('textarea.tinymce').tinymce({
+		// Location of TinyMCE script
+		script_url : 'api/tinymce/tinymce.min.js',
+
+		// General options
+		selector: "textarea",
+		height: "207",
+		toolbar1: "fontfamily fontsize forecolor backcolor | bold italic underline strikethrough subscript superscript",
+		toolbar2: "alignleft aligncenter alignright alignjustify | cut copy paste | undo redo removeformat",
+		menubar: false,
+		toolbar_items_size: 'small',
+		onchange_callback : onChangeContent,
+		setup : function(evt) {
+			evt.on('change', onChangeContent);
+			evt.on('keydown', onChangeContent);
+		},
+	});
+
+	$(div).show();
+}
 
 CanvasEvent.prototype.linkPopup = function(event) {
   var self = this;
@@ -1120,14 +1317,14 @@ CanvasEvent.prototype.linkPopup = function(event) {
     var c2 = $('<a href="#" title="' + color + '" style="background-color:' + color + '">&nbsp;&nbsp;&nbsp;</a>')
       .click(onSecondColor);
     secondColorSpan.append(c2);
-  }
+    }
   firstColorDiv.append(firstColorSpan);
   div.append(firstColorDiv);
   secondColorDiv.append(secondColorSpan);
   div.append(secondColorDiv);
   if (!(this.clicked.connectCount() == 2 && this.clicked.arrow == this.clicked.id)) {
     secondColorDiv.hide();
-  }
+}
 
   // var eType = $('<div class="visualist_selector_type" style="margin-bottom:5px;">')
   // eType.append('<input type="radio" id="visualist_selector_type1" name="radio" checked="checked" value="0"/><label for="visualist_selector_type1">Icon</label>');

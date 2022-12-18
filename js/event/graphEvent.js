@@ -95,7 +95,7 @@ graphEvent.prototype.move = function(event) {
     }
     this.x = event.pageX + this.pan.x0;
     this.y = event.pageY + this.pan.y0;
-    if (g.snapToGrid) {
+    if (this.g.snapToGrid) {
       var snap = g.snap([this.x, this.y]);
       this.x = snap[0];
       this.y = snap[1];

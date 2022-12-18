@@ -21,9 +21,9 @@ function svgSlider(svg, x, y, id, minValue, maxValue, stepValue, param, entity) 
       entity[param] = ui.value;
       entity.g.hideHelpers();
       if (entity.g.isSVG){
-          entity.redraw();
+        entity.redraw();
       }else if (entity.g.isCanvas){
-        entity.g.canvas.eventHandler.drawClicked();
+        entity.g.canvas.eventHandler.drawSelection();
       }
 
     }

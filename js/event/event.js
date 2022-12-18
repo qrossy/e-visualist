@@ -8,7 +8,7 @@ function visEvent(graph, elem)
 
 	this.g = graph;
 	this.e = elem;
-	this.verbose = false;
+	this.verbose = true;
 	this.stopProp = true;
 
 	this.getObjectAt = function(event, onlyOther)

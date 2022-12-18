@@ -164,7 +164,16 @@ function Entity(params) {
       this.labels[i].create();
     }
   };
-}
+
+  this.hitLabel = function(x, y) {
+    for (var i in this.labels) {
+      if (this.labels[i].contains(x , y)){
+        return this.labels[i];
+      }
+    }
+    return null;
+  };
+};
 
 Entity.hash = function(nodes) {
   var a = [];
