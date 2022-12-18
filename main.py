@@ -8,6 +8,11 @@ import dash_cytoscape as cyto
 from dash_iconify import DashIconify
 import icons
 
+
+# https://www.dash-mantine-components.com/components/header
+# https://icon-sets.iconify.design/fa6-solid/hospital/
+# https://dash.plotly.com/cytoscape/styling
+# https://js.cytoscape.org/#style/background-image
 # http://jsfiddle.net/bababalcksheep/ajhnmcrb/
 
 app = Dash(
@@ -98,11 +103,11 @@ app.layout = dmc.MantineProvider(
             cyto.Cytoscape(
                 id='graph',
                 elements=[
-                    {'data': {'id': 'one', 'label': 'Node 1'}, 'position': {'x': 350, 'y': 350}, 'classes':'triangle'},
+                    {'data': {'id': 'one', 'label': 'Node 1'}, 'position': {'x': 40, 'y': 350}, 'classes':'triangle'},
                     {'data': {'id': 'two', 'label': 'Node 2'}, 'position': {'x': 500, 'y': 400}},
                     {'data': {'source': 'one', 'target': 'two','label': 'Node 1 to 2'}}
                 ],
-                style={'width': '800px', 'height': '800px'},
+                style={'width': '800px', 'height': '800px','left': '300px'},
                 layout={'name': 'preset'},
                 stylesheet=[
                     # Group selectors
@@ -129,7 +134,8 @@ app.layout = dmc.MantineProvider(
                         'style': {
                             'shape': 'triangle',
                             'font-family': 'Open Sans',
-                            'background-image': 'house-solid.svg'
+                            'background-image-containment': 'over',
+                            'background-image': 'person.png'
                         }
                     }
                 ]
