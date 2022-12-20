@@ -12,7 +12,7 @@ footer = html.Footer(
     dbc.Container(
         [
             html.Hr(),
-            'Davofill - alpha 0.1',
+            'Dafofill - alpha 0.1',
         ]
     )
 )

@@ -14,8 +14,5 @@ dash.register_page(__name__, path='/404')
 layout = html.Div(
     [
         html.H1('Error - Page not found'),
-        html.Div(
-            html.A('Return home', href='/')
-        )
     ]
 )

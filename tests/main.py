@@ -10,7 +10,7 @@ from dash_iconify import DashIconify
 import utils.icons as icons
 
 import pandas as pd
-from utils.panda2tulip import Panda2Tulip
+from pages.import.panda2tulip import Panda2Tulip
 
 # https://www.dash-mantine-components.com/components/header
 # https://icon-sets.iconify.design/fa6-solid/hospital/

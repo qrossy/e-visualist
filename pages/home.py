@@ -1,21 +1,33 @@
 # package imports
 import dash
 from dash import html, dcc, callback, Input, Output
+import dash_bootstrap_components as dbc
+
+# local imports
+from components import sidebar
+from input.layout import inputLayout
 
 dash.register_page(
     __name__,
     path='/',
-    redirect_from=['/home'],
     title='Home'
 )
 
 layout = html.Div(
     [
-        html.H1('Home page!'),
-        html.Div(id='content')
+        dbc.Row([
+            sidebar,
+            dbc.Col(
+                dbc.Tabs(
+                    [
+                        dbc.Tab(inputLayout, label="Data", tab_id="data"),
+                        dbc.Tab(label="Graph", tab_id="graph"),
+                    ],
+                    id="main-tabs",
+                    active_tab="data",
+                ),
+            ),
+        ]
+        ),
     ]
 )
-
-@callback(Output('content', 'children'), Input('radios', 'value'))
-def home_radios(value):
-    return f'You have selected {value}'
